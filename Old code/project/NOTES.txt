@@ -1,0 +1,14 @@
+align 2d image with two points from 3d images.
+	use the pins in the preopt images and the DBS electrodes in the post opt images.  this can estimate parallax.
+
+after alignment, go layer by layer until the edge of the brain is found. that is where the electrode will go
+
+what needs to be labelled
+	2d - electrodes, pins, dbs electrode
+	preopt - pins
+	postopt - dbs electrode
+
+QUESTIONS
+patient orientation looking right?
+would the above process work?
+skull stripping doesn't really work

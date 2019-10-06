@@ -1,0 +1,136 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Sun Jun  9 20:56:00 2019
+
+@author: alcummings
+"""
+import os
+import cv2
+import pandas as pd
+import pydicom as dicom
+from PIL import Image
+    
+# sets up folders, sets variables, makes pngs
+def folders():
+    
+    # makes folders, will need to input dicoms into image folders, masks into mask folders
+    os.makedirs('Image1/')
+    os.makedirs('Image2/')
+    os.makedirs('PNG1/')
+    os.makedirs('PNG2/')
+    os.makedirs('Mask1/')
+    os.makedirs('Mask2/')
+    os.makedirs('Seg1/')
+    os.makedirs('Seg2/')
+    os.makedirs('Transform/')
+    return
+
+def preproc():
+    # sets paths
+    image1 = "Image1/"
+    image2 = "Image2/"
+    png1 = "PNG1/"
+    png2 = "PNG2/"
+    mask1 = 'Mask1/'
+    mask2 = 'Mask2/'
+    seg1 = "Seg1/"
+    seg2 = "Seg2/"
+
+    # sets filenames from csv
+    df = pd.read_csv(csv, header=0)
+    img1 = df.iloc[:,1]
+    img2 = df.iloc[:,2]
+    
+    # processes img1
+    for filename in img1:
+        I1 = image1 + img1 + '.dcm'
+        P1 = png1 + img1 + '.png'
+        M1 = mask1 + img1 + '.png'
+        S1 = seg1 + img1 + '.png'
+
+        # sets loop for preprocessing
+        for i in range(len(img1)): 
+        
+        # saves image1 dicoms as png
+            ds = dicom.dcmread(I1[i], force=True)
+            data = ds.pixel_array
+            im = Image.fromarray(data/8)
+            im = im.convert("L")
+            im.save(P1[i])
+            
+        # makes image1 segmentations    
+            img = cv2.imread(P1[i])
+            mask = cv2.imread(M1[i],0)
+            seg = cv2.bitwise_and(img,img,mask=mask)
+            cv2.imwrite(S1[i], seg)
+    
+    # processes img2
+    for filename in img2:
+        I2 = image2 + img2 + '.dcm'
+        P2 = png2 + img2 + '.png'
+        M2 = mask2 + img2 + '.png'
+        S2 = seg2 + img2 + '.png'
+
+        # sets loop for preprocessing
+        for i in range(len(img2)):
+        
+        #saves image2 dicoms as png   
+            ds = dicom.dcmread(I2[i], force=True)
+            data = ds.pixel_array
+            im = Image.fromarray(data/8)
+            im = im.convert("L")
+            im.save(P2[i])
+
+        # makes image2 segmentations    
+            img2 = cv2.imread(P2[i])
+            mask2 = cv2.imread(M2[i],0)
+            seg2 = cv2.bitwise_and(img2,img2,mask=mask2)
+            cv2.imwrite(S2[i], seg2)
+            
+    return
+
+def sitk():
+    
+# sets paths
+    seg1 = "Seg1/"
+    seg2 = "Seg2/"
+    final = 'Transform/'
+    
+    # sets filenames from csv
+    df = pd.read_csv(csv, header=0)
+    name = df.iloc[:,0]
+    img1 = df.iloc[:,1]
+    img2 = df.iloc[:,2]
+    
+    for filename in name:
+        S1 = seg1 + img1 + '.png'
+        S2 = seg2 + img2 + '.png'
+        T = final + name + '-1.hdf5'
+        Tb = final + name + '-bs.hdf5'
+        Tx = final + name + '-ex.hdf5'
+            
+    # runs sitk
+    for i in range(len(name)):
+        
+        sitk1 = 'python' + ' ' + 'sitk1.py' + ' ' + S1[i] + ' ' + S2[i] + ' ' + T[i]
+        os.system(sitk1)
+        
+        sitkbs = 'python' + ' ' + 'sitkbs.py' + ' ' + S1[i] + ' ' + S2[i] + ' ' + Tb[i]
+        os.system(sitkbs)
+        
+        sitkex = 'python' + ' ' + 'sitkex.py' + ' ' + S1[i] + ' ' + S2[i] + ' ' + Tx[i]
+        os.system(sitkex)
+    
+    return
+
+
+# defines path, csv needs to be in format [ID filename1 filename2]
+ospath = os.getcwd()
+os.chdir('/path/to/folder/')    
+csv = "Master.csv"
+
+# runs program     
+folders()
+preproc()
+sitk()
