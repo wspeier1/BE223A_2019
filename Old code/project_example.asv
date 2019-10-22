@@ -1,0 +1,46 @@
+fluoro=imread('C:\Users\wspeier\Documents\GitHub\BE223A_2019\data\example\IM-0001-0001.tif');
+
+subplot(1,2,1)
+hold on
+imshow(fluoro(:,:,3))
+center=round([size(fluoro,2)/2,size(fluoro,1)/2,10000]);
+plot3(center(1),center(2),center(3),'o')
+
+elecmatrix=[
+    465 154 0
+    519 135 0
+    574 122 0
+    632 117 0
+    684 110 0];
+
+plot3(elecmatrix(:,1),elecmatrix(:,2),elecmatrix(:,3),'o');
+
+lines=cell(size(elecmatrix,1),1);
+for i=1:size(elecmatrix,1)
+    lines{i}=zeros(center(3),3);
+    for j=1:center(3)
+        lines{i}(j,:)=(center(3)-j)/center(3)*center+j/center(3)*elecmatrix(i,:);
+    end
+    plot3(lines{i}(:,1),lines{i}(:,2),lines{i}(:,3));
+end
+
+subplot(1,2,2)
+load('C:\Users\wspeier\Documents\GitHub\BE223A_2019\data\example\hull.mat')
+s=8;
+rx=0;
+ry=pi/2;
+rz=0
+t=[center(1) center(2) center(3)/2];
+T=[ 1       0        0        t(1)/s
+    0       cos(rx)  -sin(rx) t(2)/s
+    0       sin(rx)  cos(rx)  t(3)/s
+    0       0        0        1/s];
+T2=[cos(ry) 0        -sin(ry) 0
+    0       1        0        0
+    sin(ry) 0        cos(ry)  0
+    0       0        0        1];
+T3=[cos(rz) -sin(rz) 0        0
+    sin(rz) cos(rz)  1        0
+    0       0       1
+mask_indices2=[mask_indices,ones(size(mask_indices,1),1)]*T';
+plot3(mask_indices2(:,1)./mask_indices2(:,4),mask_indices2(:,2)./mask_indices2(:,4),mask_indices2(:,3)./mask_indices2(:,4))
