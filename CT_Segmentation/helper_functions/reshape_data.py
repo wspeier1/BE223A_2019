@@ -10,7 +10,7 @@ def voxels_to_4D(ct_data) -> np.ndarray:
       [np.ndarray] -- A 4 x # of non-zero voxel numpy array
   """
   
-  i, j, k = np.where(ct_data > 0)
+  i, j, k = np.where(~np.isnan(ct_data))
   long_data = np.empty((len(i), 4), dtype=np.float64)
   q = 0
   for x, y, z in zip(i,j,k):

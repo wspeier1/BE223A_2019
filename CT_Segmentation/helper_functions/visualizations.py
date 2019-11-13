@@ -3,13 +3,16 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import scipy.stats as stats
 import helper_functions.reshape_data as rd 
-from typing import List
+import helper_functions.filter_CT as fct
+from typing import List, Tuple
 
 def quick_plot_3D(
   ct_data,
   ax: Axes3D = None,
   step_size: int = 50,
   is_long: bool = False,
+  is_norm: bool = False,
+  base_color: Tuple = (0, 0, 0),
   ):
   """ Plots subsampled CT/MRI data
   
@@ -21,21 +24,24 @@ def quick_plot_3D(
       step_size {int} -- sample step size 
         For example this function defaults to 1 point in 50 (default: {50})
       is_long {bool} -- set if precomputed 4D vector array using voxels_to_4D, shortens computation
+      base_color {Tuple} -- three value'd tuple of RGB values 
   """
   if not is_long:
     long_data = rd.voxels_to_4D(ct_data)
   else:
     long_data = ct_data
 
+  if is_norm:
+    vals = long_data[::step_size, 3]
+  else:
+    vals = fct.min_max_normalize(long_data[::step_size, 3])
+
   if ax is None:
     fig = plt.figure(figsize=(16,16))
     ax = fig.add_subplot(111, projection='3d')
-  step_size = 50
 
-  vals = long_data[::step_size, 3]
 
-  norm = (vals-min(vals))/(max(vals)-min(vals))
-  colors = [(0, 0, 0, n) for n in norm]
+  colors = [(base_color[0], base_color[1],base_color[2], n) for n in vals]
   ax.scatter3D(long_data[::step_size, 0], long_data[::step_size, 1], long_data[::step_size, 2], c=colors)
   return ax
 
