@@ -24,6 +24,7 @@ def quick_plot_3D(
       step_size {int} -- sample step size 
         For example this function defaults to 1 point in 50 (default: {50})
       is_long {bool} -- set if precomputed 4D vector array using voxels_to_4D, shortens computation
+      is_norm {bool} -- set if data is already normalized from 0 to 1 (default: False)
       base_color {Tuple} -- three value'd tuple of RGB values 
   """
   if not is_long:

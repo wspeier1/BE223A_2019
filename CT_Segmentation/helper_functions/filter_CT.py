@@ -12,6 +12,20 @@ def remove_ct_blocks(
   coronal_percent_remove: float,
   sagital_percent_remove: float,
   ) -> np.ndarray:
+  """ Removes blocks from ct data not used for pin tip isolation
+  
+  Arguments:
+      ct_data {np.ndarray} -- preoperative ct image
+      transverse_percent_remove {float} -- percent [0, 100] to remove
+        along transverse plane
+      coronal_percent_remove {float} -- percent [0, 100] to remove
+        along coronal plane
+      sagital_percent_remove {float} -- percent [0, 100] to remove
+        along sagital plane
+  
+  Returns:
+      np.ndarray -- block removed ct image
+  """
   i_s, j_s, k_s = ct_data.shape
 
   top_i = int((i_s * transverse_percent_remove / 200) + i_s/2)
@@ -32,7 +46,6 @@ def remove_ct_blocks(
   filt_data[:,:bot_j:,:] = fill_val
 
   filt_data[:,:,bot_k:top_k] = fill_val
-
   return filt_data
 
 def min_max_normalize(data, scale=1):
