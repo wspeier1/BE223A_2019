@@ -110,7 +110,7 @@ def isolate_pin_tips(
     for center_y, center_x, radius in zip(cy, cx, radii):
         circy, circx = circle_perimeter(center_y, center_x, radius,
                                         shape=image_raw.shape)
-        for (j, k) in zip(circx, circy):
+        for (k, j) in zip(circx, circy):
           pin_tip_matrix[i, j, k] = 1
 
   return pin_tip_matrix
