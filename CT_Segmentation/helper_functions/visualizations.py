@@ -13,6 +13,7 @@ def quick_plot_3D(
   is_long: bool = False,
   is_norm: bool = False,
   base_color: Tuple = (0, 0, 0),
+  alpha_max: float = 1.0,
   ):
   """ Plots subsampled CT/MRI data
   
@@ -26,9 +27,10 @@ def quick_plot_3D(
       is_long {bool} -- set if precomputed 4D vector array using voxels_to_4D, shortens computation
       is_norm {bool} -- set if data is already normalized from 0 to 1 (default: False)
       base_color {Tuple} -- three value'd tuple of RGB values 
+      alpha_max {float} -- value between 0 and 1 for transparancy
   """
   if not is_long:
-    long_data = rd.voxels_to_4D(ct_data)
+    long_data = rd.voxels_to_4D(ct_data, is_norm)
   else:
     long_data = ct_data
 
@@ -42,7 +44,7 @@ def quick_plot_3D(
     ax = fig.add_subplot(111, projection='3d')
 
 
-  colors = [(base_color[0], base_color[1],base_color[2], n) for n in vals]
+  colors = [(base_color[0], base_color[1],base_color[2], n * alpha_max) for n in vals]
   ax.scatter3D(long_data[::step_size, 0], long_data[::step_size, 1], long_data[::step_size, 2], c=colors)
   return ax
 
