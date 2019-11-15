@@ -10,6 +10,15 @@ def load_hull_from_mat(
     hull_path: str,
     ct_object,
   ) -> np.ndarray:
+  """ creates a list of points of hull from hull.mat file
+  
+  Arguments:
+      hull_path {str} -- path to hull
+      ct_object {nibabel.Nifti2} -- nibabel object made from CT scan
+  
+  Returns:
+      np.ndarray -- array of points (4xn)
+  """
   if hull_path.split('.')[-1] != 'mat':
     raise ValueError('Must input path to a file ending in .mat')
 
@@ -31,6 +40,15 @@ def load_hull_voxel_matrix(
     hull_path: str,
     ct_object,
   ) -> np.ndarray:
+  """ creates a matrix of the ct shape from hull.mat file
+  
+  Arguments:
+      hull_path {str} -- path to hull
+      ct_object {nibabel.Nifti2} -- nibabel object made from CT scan
+  
+  Returns:
+      np.ndarray -- voxel space hull normally shape: (256, 256, 176)
+  """
   hull_idx = load_hull_from_mat(hull_path, ct_object)
   voxel_space_hull = rd.long_to_voxels(
     long_data=hull_idx, 
@@ -39,7 +57,7 @@ def load_hull_voxel_matrix(
     )
   return voxel_space_hull
 
-def isInHull(coords, convex_hull):
+def isInHull(coords, convex_hull: ConvexHull):
     '''
     Datermine if the list of points P lies inside the hull
     :return: list
@@ -53,14 +71,18 @@ def isInHull(coords, convex_hull):
     return isInHull
 
   
-def check_in_hull_parallel(coords, convex_hull, chunk_size: int=50) -> List[bool]:
+def check_in_hull_parallel(
+    coords: np.ndarray,
+    convex_hull: ConvexHull,
+    chunk_size: int=50
+  ) -> List[bool]:
   """ Checks if coordinates within hull
   Splits coordinates in to subsets (chunks) of size chunk_size
   in order to run in parallel. returns boolean array
   
   Arguments:
-      coords {[type]} -- array of shape 3xN
-      hull {[type]} -- scipy.ConvexHull object created from hull
+      coords {np.ndarray} -- array of shape 3xN
+      hull {ConvexHull} -- scipy.ConvexHull object created from hull
   
   Keyword Arguments:
       chunk_size {int} -- length of chunk (default: {50})
@@ -89,7 +111,16 @@ def check_in_hull_parallel(coords, convex_hull, chunk_size: int=50) -> List[bool
   return np.concatenate(results)
 
   
-def calculate_hull_centroid(convex_hull, point_cloud):
+def calculate_hull_centroid(convex_hull, point_cloud) -> np.ndarray:
+  """ Finds centroid given a convex hull generated from a point cloud
+  
+  Arguments:
+      convex_hull {scipy.spatial.ConvexHull} -- hull generated from point_cloud
+      point_cloud {np.ndarray} -- 3xn array of points
+  
+  Returns:
+      np.ndarray -- Centroid in x,y,z
+  """
   verts = point_cloud[convex_hull.vertices]
   return np.sum(verts, axis=0)/len(verts)
 
@@ -98,12 +129,31 @@ def scale_position(
     centroid: np.ndarray,
     scale_factor: float,
   ) -> np.ndarray:
+  """ Scales points away from centroid
+  
+  Arguments:
+      hull_point {np.ndarray} -- 3x1 numpy array representing 1 point
+      centroid {np.ndarray} -- centroid to push away from 3x1
+      scale_factor {float} -- amount to scale
+  
+  Returns:
+      np.ndarray -- scaled
+  """
   vec = hull_point[:3] - centroid
   position_scaled = hull_point.copy()
   position_scaled[:3] = (scale_factor * vec) + centroid
   return position_scaled
 
-def scale_hull(hull_data: np.ndarray, scale_factor: float):
+def scale_hull(hull_data: np.ndarray, scale_factor: float) -> np.ndarray:
+  """ Scales hull data by a given scale factor
+  
+  Arguments:
+      hull_data {np.ndarray} -- 4xn shaped hull data
+      scale_factor {float} -- amount to increase/reduce hull volume
+  
+  Returns:
+      numpy.ndarray -- 4xn shaped scaled hull data
+  """
   points = hull_data[:,:3]
   hull = ConvexHull(points)
   centroid = calculate_hull_centroid(hull, points)
