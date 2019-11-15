@@ -118,8 +118,11 @@ def isolate_pin_tips(
 
   return pin_tip_matrix
 
-def filter_in_hull(long_data, hull):
+def filter_in_hull(long_data, hull: ConvexHull, filt_out: bool = False):
   coords = long_data[:,:3]
-  is_in_hull = mh.isInHull(coords, hull)
-  return long_data[~is_in_hull]
+  is_in_hull = mh.check_in_hull_parallel(coords, hull, 50)
+  if filt_out:
+    return long_data[is_in_hull]
+  else:
+    return long_data[~is_in_hull]
 
