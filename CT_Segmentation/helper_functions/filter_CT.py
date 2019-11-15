@@ -3,7 +3,10 @@ from skimage.transform import hough_circle, hough_circle_peaks
 from skimage.feature import canny
 from skimage.draw import circle_perimeter
 from typing import List
+from scipy.spatial import ConvexHull
+from matplotlib.path import Path
 import helper_functions.reshape_data as rd
+import helper_functions.manipulate_hull as mh
 
 
 def remove_ct_blocks(
@@ -114,3 +117,9 @@ def isolate_pin_tips(
           pin_tip_matrix[i, j, k] = 1
 
   return pin_tip_matrix
+
+def filter_in_hull(long_data, hull):
+  coords = long_data[:,:3]
+  is_in_hull = mh.isInHull(coords, hull)
+  return long_data[~is_in_hull]
+

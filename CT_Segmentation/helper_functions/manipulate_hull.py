@@ -18,7 +18,7 @@ def load_hull_from_mat(
   one = np.ones((hull_coords.shape[0], 1))
   hull_4d = np.hstack((hull_coords, one))
 
-  # Calculate transformation from milimeter to voxel
+  # Calculate transformation from milimeter to voxel indices
   aff = np.linalg.inv(ct_object.affine)
   hull_idx = np.rint(np.dot(hull_4d, aff.T))
 
@@ -36,5 +36,17 @@ def load_hull_voxel_matrix(
     )
   return voxel_space_hull
 
+def isInHull(P,hull):
+    '''
+    Datermine if the list of points P lies inside the hull
+    :return: list
+    List of boolean where true means that the point is inside the convex hull
+    Taken from stack overflow user Cunningham in their answer:
+    https://stackoverflow.com/a/52405173
+    '''
+    A = hull.equations[:,0:-1]
+    b = np.transpose(np.array([hull.equations[:,-1]]))
+    isInHull = np.all((A @ np.transpose(P)) <= np.tile(-b,(1,len(P))),axis=0)
+    return isInHull
 
   
