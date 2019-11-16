@@ -7,6 +7,7 @@ from scipy.spatial import ConvexHull
 from matplotlib.path import Path
 import helper_functions.reshape_data as rd
 import helper_functions.manipulate_hull as mh
+import progressbar
 
 
 def remove_ct_blocks(
@@ -126,3 +127,22 @@ def filter_in_hull(long_data, hull: ConvexHull, filt_out: bool = False):
   else:
     return long_data[~is_in_hull]
 
+def is_above(point, equation):
+  max_point = equation(point[0])
+  if point[1] < max_point:
+    return True
+  return False
+
+def remove_lower_regions(long_data, shape, init_point=160, end_point=200):
+  # y - 160 = m(x - 0)
+  # 200 - 160 = m(256 - 0)
+  slope = (end_point - init_point)/(shape[0])
+  plain = lambda x: (slope * (x)) + init_point
+
+  res = []
+  i = 0
+  for point in progressbar.progressbar(long_data):
+    res.append(is_above(point, plain))
+    if i > 5:
+      break
+  return long_data[res]
