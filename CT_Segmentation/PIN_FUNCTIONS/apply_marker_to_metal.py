@@ -57,7 +57,7 @@ def apply_marker_to_metal(mloc_dict,
         plt.colorbar()
         title_text = 'Image Slice #' + str(current_slice_key)
         plt.title(title_text) #current_slice_key)
-        plt.show()
+        #plt.show()
         
         #
         # Write sample images to a folder for review

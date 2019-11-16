@@ -41,7 +41,11 @@ def main():
 ### MAIN DIRECTORY NAMES
     gdir = '/home/kgonzalez/BE223A_2019/data/'
     main_directory = gdir
-
+# =============================================================================
+# 
+# Get data directories and valid files underneath
+# 
+# =============================================================================
     sub_dirs = sorted(os.listdir(main_directory))
     print(sub_dirs)
 
@@ -108,7 +112,7 @@ def main():
         nii_input_file = os.path.join(main_directory,
                                   folder_key[patient_id],
                                   nii_files[folder_key[patient_id]])
-        print(nii_input_file)
+        print('@loop/file :',loop,nii_input_file)
         
         #######################################################################
         #data for writing image files out
@@ -157,41 +161,45 @@ def main():
         
         
         ### DEBUG PLOT AND CIRCLES ONLY
-        fig, ax = plt.subplots()
-        snum = 134 #axial slicing
-        plt.imshow(data[:,:,snum],cmap='hot')
-        plt.xlabel('columns')
-        plt.ylabel('rows')
-        plt.title('Axial Slice image')
-        plt.colorbar()
-        
-        circle1 = plt.Circle((200,200), 10,color='b', fill=False)
-        ax.set_aspect(1)
-        ax.add_artist(circle1)
-        plt.show()
+# =============================================================================
+#         fig, ax = plt.subplots()
+#         snum = 134 #axial slicing
+#         plt.imshow(data[:,:,snum],cmap='hot')
+#         plt.xlabel('columns')
+#         plt.ylabel('rows')
+#         plt.title('Axial Slice image')
+#         plt.colorbar()
+#         
+#         circle1 = plt.Circle((200,200), 10,color='b', fill=False)
+#         ax.set_aspect(1)
+#         ax.add_artist(circle1)
+#         plt.show()
+# =============================================================================
         
         #Zoomed area view
         #
         
-        fig = plt.gcf()
-        ax = fig.gca()
-        plt.imshow(data[200:230,160:175,snum], cmap='hot')
-        plt.xlabel('columns')
-        plt.ylabel('rows')
-        plt.title('Zoomed Area')
-        plt.colorbar()
-        plt.show()
-        
-        
-        sum = np.sum(data[215:220,145:155,snum])
-        avg = np.average(data[215:220,145:155,140])
-        print('average is ', avg)
-        
-        
-        plt.figure()
-        plt.imshow(data[215:230,145:170,snum])
-        plt.colorbar()
-        plt.title('Zoomed into metal part')
+# =============================================================================
+#         fig = plt.gcf()
+#         ax = fig.gca()
+#         plt.imshow(data[200:230,160:175,snum], cmap='hot')
+#         plt.xlabel('columns')
+#         plt.ylabel('rows')
+#         plt.title('Zoomed Area')
+#         plt.colorbar()
+#         plt.show()
+#         
+#         
+#         sum = np.sum(data[215:220,145:155,snum])
+#         avg = np.average(data[215:220,145:155,140])
+#         print('average is ', avg)
+#         
+#         
+#         plt.figure()
+#         plt.imshow(data[215:230,145:170,snum])
+#         plt.colorbar()
+#         plt.title('Zoomed into metal part')
+# =============================================================================
         
         
         
@@ -211,11 +219,7 @@ def main():
         
         print('NaN Removal on original data Complete')
         
-        plt.figure()
-        plt.imshow(stacked[:,:,140],cmap='jet')
-        plt.title('STACKED 140z')
-        
-        
+
         #
         # Create a binary NIFTI file the same size as our input data
         #
@@ -327,30 +331,30 @@ def main():
         
         
         #subtraction of original and opened image
-        diff_data = np.subtract(erd_data,stacked)
-        plt.figure()
-        plt.imshow(diff_data[:,:,140],cmap='jet')
-        plt.colorbar()
-        plt.title('DIFFERENCE OPEN - ORIGINAL slice@z=140')
-        
-        plt.figure()
-        plt.imshow(erd_data[:,:,140],cmap='jet')
-        plt.title('OPENED IMAGE @z')
-        
-        plt.figure()
-        plt.imshow(stacked[:,:,140],cmap='jet')
-        plt.title('ORIGINAL IMAGE @z')
-        
-        plt.figure()
-        plt.imshow(pz[:,:,140],cmap='jet')
-        plt.colorbar()
-        plt.title('Prewitt Edge along Z')
-        
-        plt.figure()
-        diffp = np.subtract(stacked,pz)
-        plt.imshow(diffp[:,:,140],cmap='jet')
-        plt.colorbar()
-        plt.title('Prewitt - original')
+#        diff_data = np.subtract(erd_data,stacked)
+#        plt.figure()
+#        plt.imshow(diff_data[:,:,140],cmap='jet')
+#        plt.colorbar()
+#        plt.title('DIFFERENCE OPEN - ORIGINAL slice@z=140')
+#        
+#        plt.figure()
+#        plt.imshow(erd_data[:,:,140],cmap='jet')
+#        plt.title('OPENED IMAGE @z')
+#        
+#        plt.figure()
+#        plt.imshow(stacked[:,:,140],cmap='jet')
+#        plt.title('ORIGINAL IMAGE @z')
+#        
+#        plt.figure()
+#        plt.imshow(pz[:,:,140],cmap='jet')
+#        plt.colorbar()
+#        plt.title('Prewitt Edge along Z')
+#        
+#        plt.figure()
+#        diffp = np.subtract(stacked,pz)
+#        plt.imshow(diffp[:,:,140],cmap='jet')
+#        plt.colorbar()
+#        plt.title('Prewitt - original')
             
             
     ###############################################################################        
@@ -401,7 +405,7 @@ def main():
         
         
         
-        #print('Applying hull points to erd data')
+        print('Applying hull points to erd data in ',f)
         if (write_figs == 1):
             hull_directory = os.path.join(image_directory,'HULL_OVERLAY')
             apply_marker_to_metal(hull_dict, 
@@ -419,6 +423,7 @@ def main():
     #    #skip this step for now
         ################################################################################
     #    '''
+        print('Starting Skull Expansion for ',im_filename)
         hx,hy,hz = np.shape(stacked) #get size of newly created stack image
         if (hull_present == 1):
             total_slices = hz #total number of slices in the data
@@ -428,8 +433,8 @@ def main():
             print('dx type is ',type(dx))
             print('mx type is ', type(mx))
             
-            for ii in mx:
-                print(ii)
+            #for ii in mx:
+            #    print(ii)
         
             print('All keys found')
         
@@ -459,6 +464,7 @@ def main():
     #'''
     #CHECK THE CENTER POINT OF HULLS
     #'''
+        print('Starting Center Location for ',im_filename)
         center_dict={}
         for ii in mx.keys():
             center_dict[ii]=[]
@@ -480,7 +486,7 @@ def main():
     # ERD METAL LOCATIONS
     ################################################################################
     
-        print('STARTING METAL LOCATION')
+        print('STARTING METAL LOCATION for ',im_filename)
         sx,sy,sz = np.shape(erd_data)
         metal_points_erd=[]
         mloc_dict={}
