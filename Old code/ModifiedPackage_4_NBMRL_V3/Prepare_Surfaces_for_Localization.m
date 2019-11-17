@@ -7,7 +7,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % this is the main subject directory
-Subj_dir = 'C:\Users\wspeier\Documents\GitHub\BE223A_2019\data\example\';
+Subj_dir = '/Users/yuyan/Desktop/Papers/Course/programming lab MII A/assignment/BE223A_2019/data/subject_4';
 cd(Subj_dir) % goes to subject'd directory
 mkdir Electrode_Locations % this creates a subdirectory that will be used to store electrode locations subsequently clearv%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
