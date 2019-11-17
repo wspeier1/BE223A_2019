@@ -19,24 +19,21 @@ import helper_functions.filter_CT as fct
 import helper_functions.manipulate_hull as mh
 import matplotlib.pyplot as plt
 
-def main():
-    parser = argparse.ArgumentParser(description="Segment Skull from Preoperative CT Scans")
-    parser.add_argument('-c', '--ct', dest='ct', help='Path to nifti file containing preoperative CT scan', required=True)
-    parser.add_argument('--hull', dest='hull', help='Path to mat file with hull coordinates', required=True)
-    parser.add_argument('-o', '--output-dir', dest='output_dir', help='Directory to send output files to', default='output')
-    parser.add_argument('-s', '--subject-name', dest='subject', help='Desired name for subject', required=True)
-    parser.add_argument('-p', '--preview', dest='preview', help='Show preview', action='store_true')
-
-    args = parser.parse_args()
-
+def segment_skull(
+    ct: str,
+    hull: str,
+    output_dir: str,
+    subject: str,
+    preview: bool,
+  ):
     print('\nLOADING CT')
     # Load Preop_CT
-    preop_CT = nib.load(args.ct)
+    preop_CT = nib.load(ct)
     preop_CT_data = preop_CT.get_fdata()
 
     print('\nLOADING HULL')
     # Load Hull
-    hull_idx = mh.load_hull_from_mat(args.hull, preop_CT)
+    hull_idx = mh.load_hull_from_mat(hull, preop_CT)
 
     print('\nCREATING CONVEX HULL')
     # Create convex hull object
@@ -52,9 +49,11 @@ def main():
     scaled = mh.scale_hull(hull_idx, 1.1)
     scaled_hull = ConvexHull(scaled[:,:3])
 
-    print('\nFILTERING CT FOR REGIONS WITHIN SCALED AND OUTSIDE ORIGINAL HULL')
+    print('\nFILTERING CT FOR REGIONS OUTSIDE ORIGINAL HULL')
     # Filter long CT Data for data within hull
     hull_filt_in = fct.filter_in_hull(long_data, hull_hull, filt_out=False)
+
+    print('\nFILTERING CT FOR REGIONS INSIDE SCALED HULL')
     hull_filt_both = fct.filter_in_hull(hull_filt_in, scaled_hull, filt_out=True)
 
     print('\nFILTERING CT FOR UPPER REGIONS USED IN CT')
@@ -63,7 +62,7 @@ def main():
     voxel_rem = rd.long_to_voxels(lower_removed, preop_CT_data.shape)
 
     print('\nSHOWING PREVIEW')
-    if args.preview:
+    if preview:
       vis.compare_filtered_original(preop_CT_data, voxel_rem)
       plt.show()
     
@@ -76,4 +75,18 @@ def main():
     nib.nifti2.save(feature_CT, file_name)
 
 if __name__ == '__main__':
-  main()
+  parser = argparse.ArgumentParser(description="Segment Skull from Preoperative CT Scans")
+  parser.add_argument('-c', '--ct', dest='ct', help='Path to nifti file containing preoperative CT scan', required=True)
+  parser.add_argument('--hull', dest='hull', help='Path to mat file with hull coordinates', required=True)
+  parser.add_argument('-o', '--output-dir', dest='output_dir', help='Directory to send output files to', default='output')
+  parser.add_argument('-s', '--subject-name', dest='subject', help='Desired name for subject', required=True)
+  parser.add_argument('-p', '--preview', dest='preview', help='Show preview', action='store_true')
+
+  args = parser.parse_args()
+  segment_skull(
+    args.ct,
+    args.hull,
+    args.output_dir,
+    args.subject,
+    args.preview
+  )
