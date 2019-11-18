@@ -35,7 +35,7 @@ def main(input_directory = '/home/kgonzalez/BE223A_2019/data/',
 # =============================================================================
 # Set the options for running over the entire data set and creating images
 # =============================================================================
-    run_all = 0 #set to 1 to go through every code block
+    run_all = 1 #set to 1 to go through every code block
     show_figs = 1
     write_figs = 1
 
@@ -119,6 +119,7 @@ def main(input_directory = '/home/kgonzalez/BE223A_2019/data/',
     #start_index =13 #0
     #stop_index = 14 #0
     if (run_all == 1):
+        start_index = 0
         stop_index = len(nii_files)
         print('**** Running over every folder ****')
     else:
@@ -315,33 +316,6 @@ def main(input_directory = '/home/kgonzalez/BE223A_2019/data/',
         #    erd_data[:,ii,:] =cv2.dilate(stacked[:,ii,:],kernel, iterations=1)
         
         
-        #subtraction of original and opened image
-#        diff_data = np.subtract(erd_data,stacked)
-#        plt.figure()
-#        plt.imshow(diff_data[:,:,140],cmap='jet')
-#        plt.colorbar()
-#        plt.title('DIFFERENCE OPEN - ORIGINAL slice@z=140')
-#        
-#        plt.figure()
-#        plt.imshow(erd_data[:,:,140],cmap='jet')
-#        plt.title('OPENED IMAGE @z')
-#        
-#        plt.figure()
-#        plt.imshow(stacked[:,:,140],cmap='jet')
-#        plt.title('ORIGINAL IMAGE @z')
-#        
-#        plt.figure()
-#        plt.imshow(pz[:,:,140],cmap='jet')
-#        plt.colorbar()
-#        plt.title('Prewitt Edge along Z')
-#        
-#        plt.figure()
-#        diffp = np.subtract(stacked,pz)
-#        plt.imshow(diffp[:,:,140],cmap='jet')
-#        plt.colorbar()
-#        plt.title('Prewitt - original')
-            
-            
     ###############################################################################        
     #'''
     ################################################################################
@@ -400,14 +374,11 @@ def main(input_directory = '/home/kgonzalez/BE223A_2019/data/',
                                 write_to_disk =1,
                                 output_folder = hull_directory)        
             
-            
-    ###############################################################################
-    #    '''
-        ################################################################################
-    #    # Expand the hull to fit skull a bit more. If no hull nifit was found, 
-    #    #skip this step for now
-        ################################################################################
-    #    '''
+    
+# =============================================================================
+#  Expand the hull to fit skull a bit more. If no hull nifit was found, 
+#  skip this step for now
+# =============================================================================
         print('Starting Skull Expansion for ',im_filename)
         hx,hy,hz = np.shape(stacked) #get size of newly created stack image
         if (hull_present == 1):
@@ -424,9 +395,9 @@ def main(input_directory = '/home/kgonzalez/BE223A_2019/data/',
             print('All keys found')
         
         
-            #
-            # Scale up the input hull by sf %
-            #
+# =============================================================================
+# Scale up the input hull by sf %
+# =============================================================================
             sf= 1.20 #1.02
             expanded_hull_dict = scale_hull(hz, mx, my,centroid,sf)
         
@@ -455,6 +426,9 @@ def main(input_directory = '/home/kgonzalez/BE223A_2019/data/',
             center_dict[ii]=[]
             center_dict[ii].append([my[ii][0],mx[ii][0]])
         
+# =============================================================================
+# Write out figures with the center point of the hull
+# =============================================================================
         if (show_figs == 1):
             center_hull_directory = os.path.join(image_directory,
                                                      'HULL_CENTER_POINT_OVERLAY')
@@ -495,7 +469,14 @@ def main(input_directory = '/home/kgonzalez/BE223A_2019/data/',
                                     metal_value = 2000, 
                                     depth=1,
                                     lower_val=0.95,   
-                                    upper_val = 1.50)
+                                    upper_val = 15.50)
+            #upped upper_val to 15x to make sure even the really high voxel
+            #values for DB06 are accounted for. A histogram function will be
+            #needed to keep this within a specific range. Setting this value
+            #very high will allow all voxels above the metal_value to be 
+            #counted, which should be okay by using the hull to limit them 
+            #(This may break down if there is hardware really close to the hull
+            #values)
             #output of find_metal_mass is row, col, slice#
         
         
