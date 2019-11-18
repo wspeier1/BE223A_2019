@@ -5,6 +5,7 @@ from copy import copy, deepcopy  #to copy matrices
 
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation #just for animating a plot
+import nibabel as nib  #CT import library for NIFTI formats
 
 #generic toolset for transformations
 import scipy.misc
@@ -23,24 +24,40 @@ from apply_marker_to_metal import apply_marker_to_metal
 from get_center_hull import get_center_hull
 from scale_hull import scale_hull
 from find_metal_mass import find_metal_mass
+from get_metal_contrast import get_metal_contrast
 
-def main():
+def main(input_directory = '/home/kgonzalez/BE223A_2019/data/',
+         output_image_base = '/home/kgonzalez/BE223A_2019/CT_Segmentation/PIN_NII',
+         ):
     #get_dirs('/home/kgonzalez/BE223A_2019/data')
 
-    #
-    # Debug settings
-    #
-    run_all = 1 #set to 1 to go through every code block
+
+# =============================================================================
+# Set the options for running over the entire data set and creating images
+# =============================================================================
+    run_all = 0 #set to 1 to go through every code block
     show_figs = 1
     write_figs = 1
 
-    #set up image output directory
-    output_image_base = '/home/kgonzalez/BE223A_2019/CT_Segmentation/PIN_NII'
+
+# =============================================================================
+#  Determine the input folders and output locations
+# =============================================================================
+    input_directory = input('Enter full path to folder of data directories: ')
+    if len(input_directory) == 0 :
+        input_directory = '/home/kgonzalez/BE223A_2019/data/'
+        
+    print('User input directory is set to: ', input_directory)
+
+    output_image_base = input('Enter the output folder for each patient case: ')
+    if (len(output_image_base) == 0):
+        output_image_base = '/home/kgonzalez/BE223A_2019/CT_Segmentation/PIN_NII'
+    print('Output top level directory is: ', output_image_base)
 
 
-### MAIN DIRECTORY NAMES
-    gdir = '/home/kgonzalez/BE223A_2019/data/'
-    main_directory = gdir
+
+
+    main_directory = input_directory #referenced later for base folder
 # =============================================================================
 # 
 # Get data directories and valid files underneath
@@ -76,36 +93,46 @@ def main():
 #
 # Get all of the patient directories below our main folder
 #
-    dir_list,file_list = get_dirs(gdir)
+    dir_list,file_list = get_dirs(main_directory)
     for ii in dir_list:
         print(ii)
+# =============================================================================
+#     #Build list of all PreOP CT NIFTI files found
+# =============================================================================
 
-    #Build list of all PreOP CT NIFTI files found
-    nii_files = get_nii_files(main_directory,dir_list, file_list, "preopCT",".nii")
+    nii_files = get_nii_files(main_directory,dir_list, file_list, "pre",".nii")
     
-    
-    
-###############################################################################
 
-    #
-    #Alter this for custom single runs
-    #
-    start_index =0
-    stop_index = 0
+# =============================================================================
+# List the folders found in the data directory
+# =============================================================================
+    print('-----PATIENT FOLDERS AVAILABLE-----')
+    folder_key=[]
+    for ii in enumerate(nii_files):
+        print(ii[0],ii[1])
+        folder_key.append( ii[1])
+
+
+# =============================================================================
+# Choose an individual folder or all
+# =============================================================================
+    #start_index =13 #0
+    #stop_index = 14 #0
     if (run_all == 1):
         stop_index = len(nii_files)
+        print('**** Running over every folder ****')
+    else:
+        #prompt user to select one directory
+        user_answer = int(input('Enter patient ID # to read:'))
+        start_index = user_answer
+        stop_index = start_index+1
+        print('index is ', stop_index)
     #stop_index = len(nii_files)
-    print('number of loops will be', stop_index)
+    #print('number of loops will be', stop_index)
     
 
     for loop in range(start_index,stop_index):
-        print('-----PATIENT FOLDERS AVAILABLE-----')
-        folder_key=[]
-        for ii in enumerate(nii_files):
-            print(ii[0],ii[1])
-            folder_key.append( ii[1])
-    
-        print('enter patient #')
+
         patient_id = loop #input() 1 is subject 5
     
     
@@ -114,9 +141,10 @@ def main():
                                   nii_files[folder_key[patient_id]])
         print('@loop/file :',loop,nii_input_file)
         
-        #######################################################################
-        #data for writing image files out
-        #######################################################################
+# =============================================================================
+# data for writing image files out
+# =============================================================================
+
         image_folder_id=nii_files[folder_key[patient_id]]
         im_filename, file_extension = os.path.splitext(image_folder_id)
         print('Suggested image folder name: ',im_filename)
@@ -125,11 +153,10 @@ def main():
             print('BASE path does not exist. trying to make')
             os.mkdir(image_directory)
     
-    ###############################################################################
-    #
-    #    Kernels and other operators 
-    #
-        
+
+# =============================================================================
+# Kernels and other operators         
+# =============================================================================
         kernel_circle = [ [0,1,0], [1,1,1],[0,1,0]]
         kernel_square = [ [1,1,1],[1,1,1],[1,1,1] ]
         print(np.matrix(kernel_circle))
@@ -139,17 +166,12 @@ def main():
         print(np.matrix(prewitt_x))
         print(np.matrix(prewitt_y))
         
-    ###############################################################################
+   
+###############################################################################
+#Get stacked image with all of the NaNs removed and simple metal location found
+###############################################################################
     
-    ################################################################################
-    #Get stacked image with all of the NaNs removed and simple metal location found
-    ################################################################################
-    
-        #
-        #import numpy as np
-        #
-        import nibabel as nib
-        import matplotlib.pyplot as plt
+
         
         #input patient full file name from previous block
         f = nii_input_file
@@ -159,54 +181,10 @@ def main():
         # Show original image
         print('NII filename opened is ',f)
         
-        
-        ### DEBUG PLOT AND CIRCLES ONLY
+
 # =============================================================================
-#         fig, ax = plt.subplots()
-#         snum = 134 #axial slicing
-#         plt.imshow(data[:,:,snum],cmap='hot')
-#         plt.xlabel('columns')
-#         plt.ylabel('rows')
-#         plt.title('Axial Slice image')
-#         plt.colorbar()
-#         
-#         circle1 = plt.Circle((200,200), 10,color='b', fill=False)
-#         ax.set_aspect(1)
-#         ax.add_artist(circle1)
-#         plt.show()
+#       Remove any NaN values before running over this data  
 # =============================================================================
-        
-        #Zoomed area view
-        #
-        
-# =============================================================================
-#         fig = plt.gcf()
-#         ax = fig.gca()
-#         plt.imshow(data[200:230,160:175,snum], cmap='hot')
-#         plt.xlabel('columns')
-#         plt.ylabel('rows')
-#         plt.title('Zoomed Area')
-#         plt.colorbar()
-#         plt.show()
-#         
-#         
-#         sum = np.sum(data[215:220,145:155,snum])
-#         avg = np.average(data[215:220,145:155,140])
-#         print('average is ', avg)
-#         
-#         
-#         plt.figure()
-#         plt.imshow(data[215:230,145:170,snum])
-#         plt.colorbar()
-#         plt.title('Zoomed into metal part')
-# =============================================================================
-        
-        
-        
-        
-        # 
-        # Remove any NaN values before running over this data
-        #
         sx,sy,sz = np.shape(data)
         
         for ii in range(0,sz):
@@ -218,7 +196,14 @@ def main():
                 stacked = np.dstack([stacked,new_data])
         
         print('NaN Removal on original data Complete')
-        
+
+# =============================================================================
+#  Get range of values in data
+# =============================================================================
+        # -- to be updated ---
+        #crange = get_metal_contrast(data,numbins=200)
+
+
 
         #
         # Create a binary NIFTI file the same size as our input data
