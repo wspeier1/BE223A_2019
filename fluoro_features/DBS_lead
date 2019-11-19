@@ -113,7 +113,7 @@ print("frame is located at: (x,y,radius)", center_of_frame)
 # narrow down DBS lead: first vertical line of slope >= 2.5; second
 # end point is near the center of the fram
 
-img_l = cv2.imread('/Users/Jenny/beta testing/fluoro_subject_1c.tif') 
+img_l = cv2.imread(input_image) 
   
 # Convert the img_l to grayscale 
 gray = cv2.cvtColor(img_l,cv2.COLOR_BGR2GRAY) 
