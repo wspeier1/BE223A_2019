@@ -28,15 +28,19 @@ from get_metal_contrast import get_metal_contrast
 
 def main(input_directory = '/home/kgonzalez/BE223A_2019/data/',
          output_image_base = '/home/kgonzalez/BE223A_2019/CT_Segmentation/PIN_NII',
+         nifti_out_folder = '/home/kgonzalez/BE223A_2019/CT_Segmentation/PIN_NII'
          ):
     #get_dirs('/home/kgonzalez/BE223A_2019/data')
-
+#        nifti_out_folder = '/home/kgonzalez/BE223A_2019/CT_Segmentation/PIN_NII'
+    #use this as a basis for finding files in the code area
+    current_directory = os.getcwd()
+    print('Current working directory is: ',current_directory)
 
 # =============================================================================
 # Set the options for running over the entire data set and creating images
 # =============================================================================
-    run_all = 1 #set to 1 to go through every code block
-    show_figs = 1
+    run_all = 0 #set to 1 to go through every code block
+    show_figs = 0
     write_figs = 1
 
 
@@ -305,25 +309,23 @@ def main(input_directory = '/home/kgonzalez/BE223A_2019/data/',
         # do an erosion followed by dilation. Try a prewitt edge detection filter for
         #comparison
         for ii in range(0,sz):
-            erd_data[:,:,ii] =cv2.erode(stacked[:,:,ii],kernel, iterations=1)
-            pz[:,:,ii] = ndimage.prewitt(stacked[:,:,ii])
-            erd_data[:,:,ii] = cv2.dilate(erd_data[:,:,ii],kernel,iterations=1)
+            #turn off open filtering to see if more metal points maintained
+            #erd_data[:,:,ii] =cv2.erode(stacked[:,:,ii],kernel, iterations=1)
+            #pz[:,:,ii] = ndimage.prewitt(stacked[:,:,ii])
+            #erd_data[:,:,ii] = cv2.dilate(erd_data[:,:,ii],kernel,iterations=1)
+            erd_data[:,:,ii] = stacked[:,:,ii]
+        print('DISABLED OPEN SEQUENCE')
         
-        print('COMPLETED OPEN SEQUENCE')
-        
-        #try a dilation in the orthogonal slice plane
-        #for ii in range(0,sy):
-        #    erd_data[:,ii,:] =cv2.dilate(stacked[:,ii,:],kernel, iterations=1)
+
         
         
-    ###############################################################################        
-    #'''
+
     ################################################################################
     #Assign hull points from cube to dictionary. Dictionary points can be used to 
     #overlay onto images for a quick display
     #
     ################################################################################
-    #    '''
+
         hull_dict={} #init dictionary
         centroid={}  #hold centroid vals
         
@@ -365,13 +367,13 @@ def main(input_directory = '/home/kgonzalez/BE223A_2019/data/',
         
         
         print('Applying hull points to erd data in ',f)
-        if (write_figs == 1):
+        if (show_figs == 1):
             hull_directory = os.path.join(image_directory,'HULL_OVERLAY')
             apply_marker_to_metal(hull_dict, 
                                 erd_data, 0,
                                 cmapin='bone',
                                 marker_color='r',
-                                write_to_disk =1,
+                                write_to_disk =write_figs,
                                 output_folder = hull_directory)        
             
     
@@ -405,14 +407,14 @@ def main(input_directory = '/home/kgonzalez/BE223A_2019/data/',
             #print(len(expanded_hull_dict))
         
         
-            if (write_figs == 1):
+            if (show_figs == 1):
                 scaled_hull_directory = os.path.join(image_directory,
                                                      'SCALED_HULL_OVERLAY')
                 apply_marker_to_metal(expanded_hull_dict, 
                                     stacked,0,
                                     cmapin='bone',
                                     marker_color='g',
-                                    write_to_disk =1,
+                                    write_to_disk =write_figs,
                                     output_folder = scaled_hull_directory)
     
     
@@ -436,7 +438,7 @@ def main(input_directory = '/home/kgonzalez/BE223A_2019/data/',
                                 stacked,0,
                                 cmapin='bone',
                                 marker_color='r',
-                                write_to_disk=1,
+                                write_to_disk=write_figs,
                                 output_folder = center_hull_directory)            
     
     ###############################################################################
@@ -519,7 +521,7 @@ def main(input_directory = '/home/kgonzalez/BE223A_2019/data/',
                                   'r', #marker color
                                   expanded_hull_dict,
                                   'g',
-                                  write_to_disk=1,
+                                  write_to_disk=write_figs,
                                   output_folder = metal_marker_directory)
     
     
@@ -565,7 +567,7 @@ def main(input_directory = '/home/kgonzalez/BE223A_2019/data/',
         output_name = rawname[0] + '_PIN_TIPS.nii'
         
         output_img = nib.Nifti1Image(output_nii, img.affine, img.header)
-        nifti_out_folder = '/home/kgonzalez/BE223A_2019/CT_Segmentation/PIN_NII'
+
         
         output_file = os.path.join(nifti_out_folder, output_name)  #'pin_output.nii')
         nib.save(output_img, output_file) #save the new NIFTI file
