@@ -49,8 +49,7 @@ def get_pin_locations(input_directory = '/home/kgonzalez/BE223A_2019/data/',
     show_figs = 0
     write_figs = 0
 
-    nifti_out_folder = output_image_base
-    print('Output directed to: ',nifti_out_folder)
+
 # =============================================================================
 #  Determine the input folders and output locations
 # =============================================================================
@@ -69,6 +68,8 @@ def get_pin_locations(input_directory = '/home/kgonzalez/BE223A_2019/data/',
 
 
     main_directory = input_directory #referenced later for base folder
+    nifti_out_folder = output_image_base #use the root output folder for NII
+    print('Output directed to: ',nifti_out_folder)
 # =============================================================================
 # 
 # Get data directories and valid files underneath
