@@ -12,7 +12,7 @@ import scipy.misc
 from scipy import ndimage
 import scipy.io as sio
 from scipy import signal  #for convolution filtering
-import cv2 as cv2
+#import cv2 as cv2
 
 from get_dirs import get_dirs
 from get_nii_files import get_nii_files
@@ -33,6 +33,12 @@ def get_pin_locations(input_directory = '/home/kgonzalez/BE223A_2019/data/',
     #get_dirs('/home/kgonzalez/BE223A_2019/data')
 #        nifti_out_folder = '/home/kgonzalez/BE223A_2019/CT_Segmentation/PIN_NII'
     #use this as a basis for finding files in the code area
+    
+# =============================================================================
+#     To run in a command window: 
+#     python -c 'import main; main.get_pin_locations()'
+# =============================================================================
+    
     current_directory = os.getcwd()
     print('Current working directory is: ',current_directory)
 
@@ -43,7 +49,8 @@ def get_pin_locations(input_directory = '/home/kgonzalez/BE223A_2019/data/',
     show_figs = 0
     write_figs = 0
 
-
+    nifti_output_folder = output_image_base
+    print('Output directed to: ',nifti_output_folder)
 # =============================================================================
 #  Determine the input folders and output locations
 # =============================================================================
