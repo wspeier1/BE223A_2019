@@ -213,11 +213,11 @@ def curve_extraction(input_path, output_path):
 
 # In[120]:
 
-
+"""
 input_path = patient[0]
 output_path = 'Data/Curvature_fluoro/patient_'+str(0)+'.npy'
 curve_extraction(raw_img, output_path)
-
+"""
 
 # In[117]:
 
