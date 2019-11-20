@@ -78,8 +78,8 @@ def segment_skull(
       plt.show()
     
     file_name = os.path.join(
-        args.output_dir,
-        args.subject + '_skull.nii'
+        output_dir,
+        subject + '_skull.nii'
     )
     print('\nSAVING OUTPUT TO:', file_name)
     feature_CT = nib.nifti1.Nifti1Image(voxel_rem, preop_CT.affine, header=preop_CT.header)
