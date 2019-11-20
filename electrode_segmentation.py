@@ -136,7 +136,7 @@ save_path = np.array(['Data/Electrode_fluoro/patient_0.npy',
 # In[11]:
 
 
-electrode_detection(raw_patient[0],save_path[0])
+#electrode_detection(raw_patient[0],save_path[0])
 
 
 # In[5]:
