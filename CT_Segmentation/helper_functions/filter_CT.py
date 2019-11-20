@@ -2,8 +2,9 @@ import numpy as np
 from skimage.transform import hough_circle, hough_circle_peaks
 from skimage.feature import canny
 from skimage.draw import circle_perimeter
-from typing import List
+from typing import List, Tuple
 from scipy.spatial import ConvexHull
+from scipy.ndimage import gaussian_laplace
 from matplotlib.path import Path
 import helper_functions.reshape_data as rd
 import helper_functions.manipulate_hull as mh
@@ -146,3 +147,26 @@ def remove_lower_regions(long_data, shape, init_point=160, end_point=200):
     if i > 5:
       break
   return long_data[res]
+
+def get_skull_vertices(
+    filt_ct_data: np.ndarray,
+    ct_shape: Tuple,
+    thresh: float = 0.6,
+    sigma: float = 1.0,
+  ) -> np.ndarray:
+
+  g_filt = gaussian_laplace(filt_ct_data, sigma=sigma)
+  mmax = min_max_normalize(g_filt)
+
+  norm = g_filt.copy()
+  norm[np.where(mmax < thresh)] = 1
+  norm[np.where(mmax >= thresh)] = 0
+
+  long_norm = rd.voxels_to_4D(norm, is_norm=True)
+
+  hull_norm = ConvexHull(long_norm[:,:3])
+  skull_vertices = long_norm[hull_norm.vertices]
+  if not set(skull_vertices[:,3].tolist()) == set([1]):
+    print(set(skull_vertices[:,3].tolist()))
+    raise ValueError('Not binary')
+  return skull_vertices

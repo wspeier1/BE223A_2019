@@ -56,9 +56,20 @@ def segment_skull(
     print('\nFILTERING CT FOR REGIONS INSIDE SCALED HULL')
     hull_filt_both = fct.filter_in_hull(hull_filt_in, scaled_hull, filt_out=True)
 
+    voxel_rem_both = rd.long_to_voxels(hull_filt_both, preop_CT_data.shape)
+
+    print('\nGET CURVATURE OF SKULL')
+    skull_vertices = fct.get_skull_vertices(
+        voxel_rem_both,
+        preop_CT_data.shape,
+        thresh=0.6,
+        sigma=1
+    )
+
+
     print('\nFILTERING CT FOR UPPER REGIONS USED IN CT')
     # Remove lower portion from below points in linear plane drawn from y(x=0) = 100 --> y(x=256) = 160
-    lower_removed = fct.remove_lower_regions(hull_filt_both, preop_CT_data.shape, init_point=100, end_point=150)
+    lower_removed = fct.remove_lower_regions(skull_vertices, preop_CT_data.shape, init_point=100, end_point=150)
     voxel_rem = rd.long_to_voxels(lower_removed, preop_CT_data.shape)
 
     print('\nSHOWING PREVIEW')
@@ -71,8 +82,8 @@ def segment_skull(
         args.subject + '_skull.nii'
     )
     print('\nSAVING OUTPUT TO:', file_name)
-    feature_CT = nib.nifti2.Nifti2Image(voxel_rem, preop_CT.affine, header=preop_CT.header)
-    nib.nifti2.save(feature_CT, file_name)
+    feature_CT = nib.nifti1.Nifti1Image(voxel_rem, preop_CT.affine, header=preop_CT.header)
+    nib.nifti1.save(feature_CT, file_name)
 
 if __name__ == '__main__':
   parser = argparse.ArgumentParser(description="Segment Skull from Preoperative CT Scans")
