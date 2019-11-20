@@ -17,6 +17,7 @@ def is_point_in_hull(scaled_hull_dict,
     
     
     point_valid = 0
+    valid_pixel_distance = 10 #pixel line that is allowed from hull
     #
     # hull dictionary is slice with all row, cols matching
     #meany[hslice].
@@ -89,7 +90,7 @@ def is_point_in_hull(scaled_hull_dict,
         length_hull_tip = np.sqrt(np.power(distance_hull_tipx,2) + np.power(distance_hull_tipy,2))
         
         skip_point = 0
-        if (length_hull_tip >= 20):
+        if (length_hull_tip >= valid_pixel_distance):
             #keep hull points far away from taking up cpu
             skip_point = 1
             continue

@@ -24,6 +24,15 @@ def find_metal_mass(section,
 
     output_coordinates = []
 
+    #
+    # Check to see if we have a hull in this slice. If we don't, skip this
+    # slice, for now.
+    #
+    if slicenum not in scaled_hull_dict.keys():
+        #print('NO HULL FOR THIS SLICE FOUND: ', slicenum)
+        return output_coordinates
+
+
     #print('in find_metal_mass, row and col are ',row1, col1)
     for row in range(0,row1):
         for col in range(0,col1):
@@ -41,8 +50,12 @@ def find_metal_mass(section,
                     #if pixel - row depth: pixel + row depth are all within the
                     #range for metal, keep this pixel as a possible match
 
-                    avg_cols = np.average(section[row,col-depth:col+depth])
-                    avg_rows = np.average(section[row-depth:row+depth,col])
+                    #avg_cols = np.average(section[row,col-depth:col+depth])
+                    #avg_rows = np.average(section[row-depth:row+depth,col])
+                    
+                    # DEBUG -- averaging may not work well for our OPENED image
+                    avg_cols = section[row,col]
+                    avg_rows = section[row,col]
                     #print('row,col: avgc, avgr ', pixel_y, pixel_x,
                     #      avg_cols, avg_rows)
                     if ( (avg_cols >= (lower_val*metal_value) and (avg_cols <= (upper_val*metal_value))) \
