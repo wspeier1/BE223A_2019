@@ -49,8 +49,8 @@ def get_pin_locations(input_directory = '/home/kgonzalez/BE223A_2019/data/',
     show_figs = 0
     write_figs = 0
 
-    nifti_output_folder = output_image_base
-    print('Output directed to: ',nifti_output_folder)
+    nifti_out_folder = output_image_base
+    print('Output directed to: ',nifti_out_folder)
 # =============================================================================
 #  Determine the input folders and output locations
 # =============================================================================
