@@ -27,15 +27,37 @@ def long_to_voxels(
     long_data: np.ndarray,
     output_shape: Tuple,
     fill_value: float = 0.0,
-  ):
+  ) -> np.ndarray:
+  """ Turns data of shape 4xn to nxm space of original CT scan
+  
+  Arguments:
+      long_data {np.ndarray} -- 4xn ndarray
+      output_shape {Tuple} -- desired shape to match ct scan voxels
+  
+  Keyword Arguments:
+      fill_value {float} -- data to fill for voxels not in long_data (default: {0.0})
+  
+  Returns:
+       np.ndarray -- array of shape "output_shape"
+  """
   matrix = np.zeros(output_shape) + fill_value
   for q in range(long_data.shape[0]):
     i, j, k, val = long_data[q]
     matrix[int(i), int(j), int(k)] = val
   return matrix
 
-def voxels_to_4D_sample(data, step_size: int) -> np.ndarray:
-  i, j, k = np.where(data > 0)
+def voxels_to_4D_sample(data: np.ndarray, step_size: int) -> np.ndarray:
+  """ Turns voxel space in to array of shape 4xN, filters out some points
+  removes points corresponding to minimum value in voxel space data
+  
+  Arguments:
+      data {np.ndarray} -- voxel space data
+      step_size {int} -- number of points to skip in each direction of voxel space
+  
+  Returns:
+      np.ndarray -- 4xN array
+  """
+  i, j, k = np.where(data > data.min())
   i_short = i[::step_size]
   j_short = j[::step_size]
   k_short = k[::step_size]
@@ -48,10 +70,32 @@ def voxels_to_4D_sample(data, step_size: int) -> np.ndarray:
   return long_data
 
 def project_ct_2D(ct_data, axis: int):
-    projection = np.nanmean(ct_data, axis=axis)
-    return projection
+  """ Flattens CT data by taking mean of an axis
+  
+  Arguments:
+      ct_data {np.ndarray} -- voxel space ct data
+      axis {int} -- axis to take mean of can be: 0, 1, 2
+  
+  Returns:
+      np.ndarray -- flattened data
+  """
+  projection = np.nanmean(ct_data, axis=axis)
+  return projection
 
-def get_slice(ct_data, direction: str, slice: int) -> np.ndarray:
+def get_slice(ct_data: np.ndarray, direction: str, slice: int) -> np.ndarray:
+  """ Get a 2D slice of 3D voxel data
+  
+  Arguments:
+      ct_data {np.ndarray} -- voxel space CT data
+      direction {str} -- direction (i, j, k) of slice
+      slice {int} -- slice number
+  
+  Raises:
+      ValueError: incorrect direction specified
+  
+  Returns:
+      np.ndarray -- 2D image
+  """
   if direction == 'i':
     return ct_data[slice,:,:]
   elif direction == 'j':

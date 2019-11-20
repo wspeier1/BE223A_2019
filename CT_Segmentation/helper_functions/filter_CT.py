@@ -120,7 +120,20 @@ def isolate_pin_tips(
 
   return pin_tip_matrix
 
-def filter_in_hull(long_data, hull: ConvexHull, filt_out: bool = False):
+def filter_in_hull(long_data: np.ndarray, hull: ConvexHull, filt_out: bool = False):
+  """ Removes data points within a specified convexHull
+  
+  Arguments:
+      long_data {np.ndarray} -- 4xN array of numpy coordinates
+      hull {ConvexHull} -- Computed ConvexHull object
+  
+  Keyword Arguments:
+      filt_out {bool} -- Set to true to remove points OUTSIDE hull 
+        (default: {False})
+  
+  Returns:
+      np.ndarray -- 4xN filtered long_data
+  """
   coords = long_data[:,:3]
   is_in_hull = mh.check_in_hull_parallel(coords, hull, 50)
   if filt_out:
@@ -128,13 +141,38 @@ def filter_in_hull(long_data, hull: ConvexHull, filt_out: bool = False):
   else:
     return long_data[~is_in_hull]
 
-def is_above(point, equation):
+def is_above(point, equation) -> bool:
+  """ Check if an x,y pair of coordinates lies below a line
+  
+  Arguments:
+      point {List} -- point to check
+      equation {Function} -- function to evaluate x coorindate 
+        and return max y coordinate. Exmaple: y = lambda x: x + 1
+  
+  Returns:
+      bool -- If point is below or above
+  """
   max_point = equation(point[0])
   if point[1] < max_point:
     return True
   return False
 
 def remove_lower_regions(long_data, shape, init_point=160, end_point=200):
+  """ Removes section of CT not in Fluoro based on plane
+  Plane is constant in Z, starts at y = init_point, 
+  and ends at x = end_point. 
+  
+  Arguments:
+      long_data {np.n darray} -- data of shape 4xN
+      shape {Tuple} -- Tuple of ct voxel space shape
+  
+  Keyword Arguments:
+      init_point {int} -- max y point at x=0 (default: {160})
+      end_point {int} --  max y point at x at max(default: {200})
+  
+  Returns:
+      np.ndarray -- returns filtered long data
+  """
   # y - 160 = m(x - 0)
   # 200 - 160 = m(256 - 0)
   slope = (end_point - init_point)/(shape[0])
@@ -154,6 +192,22 @@ def get_skull_vertices(
     thresh: float = 0.6,
     sigma: float = 1.0,
   ) -> np.ndarray:
+  """ Returns vertices of convex hull from isolated
+  
+  Arguments:
+      filt_ct_data {np.ndarray} -- [description]
+      ct_shape {Tuple} -- [description]
+  
+  Keyword Arguments:
+      thresh {float} -- [description] (default: {0.6})
+      sigma {float} -- [description] (default: {1.0})
+  
+  Raises:
+      ValueError: [description]
+  
+  Returns:
+      np.ndarray -- [description]
+  """
 
   g_filt = gaussian_laplace(filt_ct_data, sigma=sigma)
   mmax = min_max_normalize(g_filt)
