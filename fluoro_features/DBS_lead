@@ -3,10 +3,13 @@
 # required packages are cv2, numpy, matplotlib.pyplot
 # input is fluoroscopy image in .tif format (note .jpg format doesn't work)
 
-# this is the only parameter that needs to be changed! output is a text file
-# containing coordinates of DBS lead as a straight line
-# input_image = "/Users/Jenny/beta testing/fluoro_subject_1c.tif"
-input_image = "/Users/Jenny/beta testing/fluoro_subject_5.tif"
+# only two parameters need to be changed:
+# 1. input file path
+input_image = "/Users/Jenny/beta testing/fluoro_subject_4.tif"
+
+# 2. output file path folder
+output_path = "/Users/Jenny/beta testing/"
+# output is a text file containing coordinates of DBS lead as a straight line
 
 import cv2 
 import numpy as np 
@@ -48,7 +51,7 @@ num_circles = (np.shape(detected_circles))[1]
 # function subject_num extracts subject number, 
 # input is .tif file pathname, output is subject number as 2 digits:
 def subject_num (filepath):
-   # this is last 2 characters before '.tif':
+   # this is last 2 characters before '.tif':s
    last_two = (filepath.split("."))[0][-2:]
    if last_two[0] == '_':
       return last_two[1]
@@ -58,20 +61,37 @@ def subject_num (filepath):
 current_subject = subject_num(input_image)
 
 # save this detected_circles, output as a text file
-circle_out_path = "/Users/Jenny/beta testing/all_circles_" + str(current_subject) +".txt"
+# circle_out_path = output_path + "all_circles_" + str(current_subject) +".txt"
 circle_pic = "/Users/Jenny/beta testing/detected circles " + str(current_subject) + ".tif"
-output = open(circle_out_path,'w')
-output.write("total number of circles found: ")
-output.write(str(num_circles))
-output.write('\n')
-output.write('each row contains: x, y ,radius\n')
-output.writelines(str(detected_circles))
-output.close()
+# output = open(circle_out_path,'w')
+# output.write("total number of circles found: ")
+# output.write(str(num_circles))
+# output.write('\n')
+# output.write('each row contains: x, y ,radius\n')
+# output.writelines(str(detected_circles))
+# output.close()
+
+# function circles_in_frame accepts 1 parameter, a numpy array (input_array), 
+# output is a filtered numpy array where centers points are restricted to
+# the area
+def filter_circles_in_frame (input_array):
+    circles_in_frame = []
+    for i in input_array[0]:
+        x = i[0]
+        y = i[1]
+        
+        if x >=500 and x <=1100 and y >= 530 and y <=1000:
+            circles_in_frame.append(i)
+
+    frames = np.asarray([circles_in_frame])
+    print(np.shape(frames))
+    return frames
+
 
 # draw circles that are detected:
 list_of_centers = []
 
-def drawing_circles (input_array):
+def draw_circles (input_array):
    if input_array is not None:
         
         # convert the circle parameters a, b and r to integers.
@@ -83,7 +103,6 @@ def drawing_circles (input_array):
             # a, b is the coorindate of center, append to list_of_centers
             center_x = a
             center_y = b
-            # print("center of the circle is:", center_x, center_y)
             list_of_centers.append([center_x, center_y])
             
             # Draw the circumference of the circle.
@@ -95,7 +114,8 @@ def drawing_circles (input_array):
             # cv2.waitKey(0)
    cv2.imwrite(circle_pic,img_c)
 
-drawing_circles(detected_circles)
+list_of_circles = filter_circles_in_frame(detected_circles)
+draw_circles(list_of_circles)
 
 # list_of_centers is a list
 # return the first of the list because it has the largest accumulator value
@@ -125,7 +145,7 @@ edges = cv2.Canny(gray,80,150,apertureSize = 3)
 
 lines = cv2.HoughLinesP(edges, 1, np.pi/180, 50, maxLineGap=50)
 
-lines_out_path = "/Users/Jenny/beta testing/lines_" + str(current_subject) +".jpg"
+lines_out_path = output_path + "lines_" + str(current_subject) +".jpg"
 
 for line in lines:
    x1, y1, x2, y2 = line[0]
@@ -205,7 +225,7 @@ vertical_array = np.asarray(DBS_lead)
 # need to output this
 print("DBS lead 2 ends points are at: ", vertical_array)
 
-filtered_lines_out = "/Users/Jenny/beta testing/filtered_lines_" + str(current_subject) +".jpg"
+filtered_lines_out = output_path + "filtered_lines_" + str(current_subject) +".jpg"
 
 a,b = vertical_array.shape
 for i in range (a):
@@ -230,7 +250,7 @@ b = y1 - m * x1
 image = cv2.imread(input_image)
 plt.imshow(image)
 
-DBS_lead_out = "/Users/Jenny/beta testing/DBS_lead_" + str(current_subject) +".txt"
+DBS_lead_out = output_path + "DBS_lead_" + str(current_subject) +".txt"
 line_output = open(DBS_lead_out, 'w')
 
 # function fill_in_pixels 
@@ -243,8 +263,8 @@ def fill_in_pixels (x1,x2):
         line_output.write(str(coordinate))
         line_output.write('\n')
         
-        # plot on image
-        plt.scatter(i,calc_y, color = 'r')
+        # plot on image, marker size 5, color red
+        plt.scatter(i,calc_y, s = 5, c = 'r')
     plt.show()
 
 fill_in_pixels(x1,x2) 
