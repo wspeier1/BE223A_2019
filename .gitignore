@@ -4,4 +4,12 @@ venv
 # Python notebook checkpoints
 .ipynb_checkpoints
 
+# VS Code file
 .vscode
+
+# Mac OS generated file
+.DS_Store
+
+# Python compliation files
+*.pyc
+__pycache__
