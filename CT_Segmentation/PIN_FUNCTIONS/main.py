@@ -12,7 +12,7 @@ import scipy.misc
 from scipy import ndimage
 import scipy.io as sio
 from scipy import signal  #for convolution filtering
-import cv2 as cv2
+#import cv2 as cv2
 
 from get_dirs import get_dirs
 from get_nii_files import get_nii_files
@@ -26,13 +26,19 @@ from scale_hull import scale_hull
 from find_metal_mass import find_metal_mass
 from get_metal_contrast import get_metal_contrast
 
-def main(input_directory = '/home/kgonzalez/BE223A_2019/data/',
+def get_pin_locations(input_directory = '/home/kgonzalez/BE223A_2019/data/',
          output_image_base = '/home/kgonzalez/BE223A_2019/CT_Segmentation/PIN_NII',
          nifti_out_folder = '/home/kgonzalez/BE223A_2019/CT_Segmentation/PIN_NII'
          ):
     #get_dirs('/home/kgonzalez/BE223A_2019/data')
 #        nifti_out_folder = '/home/kgonzalez/BE223A_2019/CT_Segmentation/PIN_NII'
     #use this as a basis for finding files in the code area
+    
+# =============================================================================
+#     To run in a command window: 
+#     python -c 'import main; main.get_pin_locations()'
+# =============================================================================
+    
     current_directory = os.getcwd()
     print('Current working directory is: ',current_directory)
 
@@ -41,7 +47,7 @@ def main(input_directory = '/home/kgonzalez/BE223A_2019/data/',
 # =============================================================================
     run_all = 0 #set to 1 to go through every code block
     show_figs = 0
-    write_figs = 1
+    write_figs = 0
 
 
 # =============================================================================
@@ -62,6 +68,8 @@ def main(input_directory = '/home/kgonzalez/BE223A_2019/data/',
 
 
     main_directory = input_directory #referenced later for base folder
+    nifti_out_folder = output_image_base #use the root output folder for NII
+    print('Output directed to: ',nifti_out_folder)
 # =============================================================================
 # 
 # Get data directories and valid files underneath
@@ -360,12 +368,6 @@ def main(input_directory = '/home/kgonzalez/BE223A_2019/data/',
         
         print('Hull points transfered to dictionary')
         
-        #
-        # Get centroid values for row and column
-        #
-        
-        
-        
         print('Applying hull points to erd data in ',f)
         if (show_figs == 1):
             hull_directory = os.path.join(image_directory,'HULL_OVERLAY')
@@ -571,5 +573,5 @@ def main(input_directory = '/home/kgonzalez/BE223A_2019/data/',
         
         output_file = os.path.join(nifti_out_folder, output_name)  #'pin_output.nii')
         nib.save(output_img, output_file) #save the new NIFTI file
-            
-            
+
+#main()
