@@ -78,7 +78,12 @@ def findXY (matrix):
                 lst.append((r,c))
     return lst
 
-
+def filterRange(lst, x_min, x_max, y_min, y_max):
+    newlst = []
+    for (y,x) in lst:
+        if (x >= x_min and x<= x_max) and (y >= y_min and y <= y_max):
+            newlst.append((y,x))
+    return newlst
 # In[7]:
 
 
@@ -111,11 +116,11 @@ def electrode_detection(input_path, output_path):
     for center_y, center_x, radius in zip(cy, cx, radii):   
         circy, circx = circle_perimeter(center_y, center_x, radius,shape=img.shape)
         img[circy, circx] = 255
-    ax.imshow(img, cmap=plt.cm.gray)
-    plt.show()
-    np.save(output_path, list(zip(cy,cx)))
-
-
+ #   ax.imshow(img, cmap=plt.cm.gray)
+ #  plt.show()
+    lst = list(zip(cy,cx))
+    lst = filterRange(lst, 400, 800, 120,480)
+    np.save(output_path, lst)
 # In[9]:
 
 
