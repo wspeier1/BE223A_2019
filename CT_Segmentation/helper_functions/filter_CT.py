@@ -191,22 +191,24 @@ def get_skull_vertices(
     ct_shape: Tuple,
     thresh: float = 0.6,
     sigma: float = 1.0,
-  ) -> np.ndarray:
+  ) -> Tuple:
   """ Returns vertices of convex hull from isolated
   
   Arguments:
-      filt_ct_data {np.ndarray} -- [description]
-      ct_shape {Tuple} -- [description]
+      filt_ct_data {np.ndarray} -- CT Data filtered for area including skull
+      ct_shape {Tuple} -- shape of ct voxels
   
   Keyword Arguments:
-      thresh {float} -- [description] (default: {0.6})
-      sigma {float} -- [description] (default: {1.0})
+      thresh {float} --  Threshold on gaussian filtered data 
+        range [0 to 1](default: {0.6})
+      sigma {float} --  gaussian filter standard deviation (default: {1.0})
   
   Raises:
-      ValueError: [description]
+      ValueError: Raises error if unable to binarize image
   
   Returns:
-      np.ndarray -- [description]
+      Tuple(np.ndarray) -- Skull vertices, full skull. Each in
+      4xN arrays.
   """
 
   g_filt = gaussian_laplace(filt_ct_data, sigma=sigma)
@@ -216,11 +218,11 @@ def get_skull_vertices(
   norm[np.where(mmax < thresh)] = 1
   norm[np.where(mmax >= thresh)] = 0
 
-  long_norm = rd.voxels_to_4D(norm, is_norm=True)
+  full_skull = rd.voxels_to_4D(norm, is_norm=True)
 
-  hull_norm = ConvexHull(long_norm[:,:3])
-  skull_vertices = long_norm[hull_norm.vertices]
+  hull_norm = ConvexHull(full_skull[:,:3])
+  skull_vertices = full_skull[hull_norm.vertices]
   if not set(skull_vertices[:,3].tolist()) == set([1]):
     print(set(skull_vertices[:,3].tolist()))
     raise ValueError('Not binary')
-  return skull_vertices
+  return (skull_vertices, full_skull)
