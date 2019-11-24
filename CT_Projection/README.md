@@ -21,7 +21,7 @@ camera = VirtualCamera()
 ct_path = 'path\to\nii\file'
 camera.import_CT(ct_path)
 ```
-- (Optional) configure panel size, panel distance, pixel resolution and the viewing side. The default value is panel width/height: 640/512 mm, pixel resolution: 1280x1024, distance 1000 mm and view from the left of the head.
+- (Optional) configure panel size, panel distance, pixel resolution and the viewing side. The default value is panel width/height: 640/512 mm, pixel resolution: 1280x1024, distance 1000 mm and view from the right of the head.
 ```python
 camera.configure_panel(panel_height=1024, panel_width=1280, pixel_height=1024, pixel_width=1280, distance=1000, source_side='r'):
 ```
@@ -70,7 +70,7 @@ camera = VirtualCamera()
 ct_path = 'path\to\nii\file'
 camera.import_hull(hull_path)
 ```
-- (Optional) configure panel size, panel distance, pixel resolution and the viewing side. The default value is panel width/height: 640/512 mm, pixel resolution: 1280x1024, distance 1000 mm and view from the left of the head.
+- (Optional) configure panel size, panel distance, pixel resolution and the viewing side. The default value is panel width/height: 640/512 mm, pixel resolution: 1280x1024, distance 1000 mm and view from the right of the head.
 ```python
 camera.configure_panel(panel_height=1024, panel_width=1280, pixel_height=1024, pixel_width=1280, distance=1000, source_side='r'):
 ```
