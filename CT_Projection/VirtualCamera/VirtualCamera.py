@@ -9,6 +9,8 @@ from VirtualCamera.MatrixOp import *
 from PIL import Image
 import PIL.ImageOps
 
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import axes3d, Axes3D
 import math
 
 class VirtualCamera:
@@ -18,6 +20,7 @@ class VirtualCamera:
         self.transformation_matrix = None
         self.reverse_matrix = None
         self.img_data = None
+        self.pixel_coord = None
 
         self.img_shape = None
         self.min = None
@@ -30,7 +33,7 @@ class VirtualCamera:
 
         # print('1', self.img_data[128][128][88])
         # print('min', self.min, 'max', self.max, 'range', self.range, 'mean', np.nanmean(self.img_data))
-        self.img_data, self.voxel_array = self.process_img_data()
+        # self.img_data, self.voxel_array = self.process_img_data()
         # print('2', self.img_data[128][128][88])
         # print('min', np.min(self.img_data), 'max', np.max(self.max), 'range', self.range, 'mean', np.nanmean(self.img_data))
         # im = Image.fromarray(self.img_data[128])
@@ -51,6 +54,11 @@ class VirtualCamera:
         self.extrinsic_matrix = None
         self.camera_matrix = None
 
+        self.world = None
+        self.source = None
+        self.final_coord = None
+        self.final_coord_origin = None
+        self.pixels = None
 
     def import_CT(self, ct_path):
         self.img = nib.load(ct_path)
@@ -67,6 +75,27 @@ class VirtualCamera:
         if type(self.max) is list:
             self.max = self.max[0]
         self.range = self.max - self.min
+        self.img_data, self.voxel_array = self.process_img_data()
+
+    def import_hull(self, hull_path):
+        self.img = nib.load(hull_path)
+        self.transformation_matrix = self.img.affine
+
+        self.reverse_matrix = np.linalg.inv(self.transformation_matrix)
+        self.img_data = self.img.get_fdata(dtype=np.float32)
+
+        self.img_shape = np.array(self.img_data.shape)
+        self.min = np.nanmin(self.img_data)
+        if type(self.min) is list:
+            self.min = self.min[0]
+        self.max = np.nanmax(self.img_data)
+        if type(self.max) is list:
+            self.max = self.max[0]
+        self.range = self.max - self.min
+        self.img_data, self.voxel_array = self.process_img_data()
+
+    def import_pixel_coord(self, pixel_coord):
+        self.pixel_coord = pixel_coord
 
     def process_img_data(self):
         if os.path.exists('./temp_data/preprocessing.h5'):
@@ -82,19 +111,14 @@ class VirtualCamera:
         # img_data = np.full(self.img_shape, self.min)
         img_data = np.nan_to_num(self.img_data, nan=self.min)
         # img_data -= self.min
-
+        print(self.img_shape)
         voxel_shape = [self.img_shape[0], self.img_shape[1], self.img_shape[2], 4]
         print(voxel_shape)
-        voxel_array = np.full(voxel_shape, 1.0)
+        voxel_array = np.full(voxel_shape, 1)
 
-        for i in range(self.img_shape[0]):
-            for j in range(self.img_shape[1]):
-                for k in range(self.img_shape[2]):
-                    voxel_array[i][j][k][0] = i
-                    voxel_array[i][j][k][1] = j
-                    voxel_array[i][j][k][2] = k
+        voxel_array = fill_voxel_array(self.img_shape, voxel_array)
 
-        voxel_array = voxel_array.reshape((self.img_shape[0]*self.img_shape[1]*self.img_shape[2], 4))
+        voxel_array = np.reshape(voxel_array, [self.img_shape[0]*self.img_shape[1]*self.img_shape[2], 4])
 
         if not os.path.exists('./temp_data'):
             os.mkdir('./temp_data')
@@ -134,28 +158,30 @@ class VirtualCamera:
         self.transformation_matrix = np.matmul(T_matrix, self.img.affine)
         self.reverse_matrix = np.linalg.inv(self.transformation_matrix)
 
-    def convert_voxel_to_world(self):
-        print('start converting voxel to CT space')
-        t0 = time.process_time()
+    def convert_voxel_to_world(self, T_matrix=None):
+        # print('start converting voxel to CT space')
+        # t0 = time.process_time()
 
-        # print(self.voxel_array[128 + 128 * 256 + 88 * 176])
-        world_points = np.transpose(np.matmul(self.transformation_matrix, np.transpose(self.voxel_array)))
+        if T_matrix is None:
+            world_points = np.transpose(np.matmul(self.transformation_matrix, np.transpose(self.voxel_array)))
+        else:
+            world_points = np.transpose(np.matmul(T_matrix, np.transpose(self.voxel_array)))
 
         # print(world_points[128 + 128 * 256 + 88 * 176])
         # print(world_points.shape, self.voxel_array.shape)
-        t1 = time.process_time()
-        print('done converting voxel to CT space', t1 - t0, ' sec')
+        # t1 = time.process_time()
+        # print('done converting voxel to CT space', t1 - t0, ' sec')
 
         return world_points
 
 
     def convert_world_to_panel(self, world_points):
-        print('start converting CT space to panel space')
-        t0 = time.process_time()
+        # print('start converting CT space to panel space')
+        # t0 = time.process_time()
         panel_points = np.transpose(np.matmul(self.camera_matrix, np.transpose(world_points)))
         panel_points = np.delete(parallel_ct_to_panel(panel_points, self.pixel_width, self.scale), 2, 1)
-        t1 = time.process_time()
-        print('done converting CT space to panel space',  t1 - t0, ' sec')
+        # t1 = time.process_time()
+        # print('done converting CT space to panel space',  t1 - t0, ' sec')
         return panel_points.astype(int)
 
     def save_img(self, name):
@@ -200,6 +226,49 @@ class VirtualCamera:
         world = self.convert_voxel_to_world()
         self.panel_array = self.convert_world_to_panel(world)
         print('Process img')
+
+    def project_2D_to_3D(self, pixel):
+        self.calculate_camera_matrix()
+        count = count_non_zero_element(self.img_data, self.img_shape)
+        self.voxel_array = np.empty([count, 4])
+        get_non_zero_voxel(self.voxel_array, self.img_data, self.img_shape)
+        self.world = self.convert_voxel_to_world()
+        world_origin = self.convert_voxel_to_world(self.img.affine)
+        self.pixels = pixel
+        self.source = np.array([self.distance/2.0, 0, 0])
+        self.final_coord = np.full([pixel.shape[0], 3], 999999.0)
+        self.final_coord_origin = np.full([pixel.shape[0], 3], 999999.0)
+
+        distance_array = np.full([self.world.shape[0], 3], 99999999.0)
+        locations, origin_location = parallel_2D_to_3D(self.pixels, self.world, world_origin, self.final_coord,
+                                                       self.final_coord_origin, distance_array, self.source,
+                                                       self.panel_width, self.panel_height, self.distance, self.scale)
+        return locations, origin_location
+
+
+    def visualize_2D_to_3D_projection(self):
+        fig = plt.figure()
+        ax = plt.axes(projection='3d')
+        ax.scatter3D(self.source[0], self.source[1], self.source[2], c='k')
+
+        panel_x = np.array([-self.distance/2.0, -self.distance/2.0, -self.distance/2.0, -self.distance/2.0, -self.distance/2.0])
+        panel_y = np.array([-self.panel_width/2.0, self.panel_width/2.0, self.panel_width/2.0, -self.panel_width/2.0, -self.panel_width/2.0])
+        panel_z = np.array([self.panel_height/2.0, self.panel_height/2.0, -self.panel_height/2.0, -self.panel_height/2.0, self.panel_height/2.0])
+        ax.plot3D(panel_x, panel_y, panel_z, 'green')
+
+        for pixel in self.pixels:
+            pixel = panel_to_coord(pixel, self.panel_width, self.panel_height, self.distance, self.scale)
+            ax.scatter3D(pixel[0], pixel[1], pixel[2], c='k')
+            xline = np.array([self.source[0], pixel[0]])
+            yline = np.array([self.source[1], pixel[1]])
+            zline = np.array([self.source[2], pixel[2]])
+            ax.plot3D(xline, yline, zline, 'gray')
+
+        ax.scatter3D(self.world[:, 0], self.world[:, 1], self.world[:, 2], alpha=0.05)
+
+        for i in range(self.final_coord.shape[0]):
+            ax.scatter3D(self.final_coord[i][0], self.final_coord[i][1], self.final_coord[i][2], color='r', s=20)
+        plt.show()
 
     def show_image(self):
         self.process_panel_to_img(self.panel_array)
