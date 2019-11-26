@@ -10,6 +10,8 @@ Add -p flag to view results as matplotlib image
 
 """
 import os
+import sys
+from typing import Tuple
 import argparse
 import nibabel as nib
 from scipy.spatial import ConvexHull
@@ -25,7 +27,22 @@ def segment_skull(
     output_dir: str,
     subject: str,
     preview: bool,
-  ):
+    save: bool = True
+  ) -> Tuple(nib.nifti1, nib.nifti1):
+    """ Segment out skull
+    second output (dense skull) is used as later during pin tip isolation
+    
+    Arguments:
+        ct {str} -- path to CT nifti
+        hull {str} -- path to .mat cortical hull
+        output_dir {str} -- path to save output to (folder)
+        subject {str} -- name of subject for output file name
+        preview {bool} -- whether to show a preview
+        save {bool} -- whether to save output or not
+    
+    Returns:
+        Tuple(nib.nifti1, nib.nifti1) -- 2 nibabel nifti1 objects containing: skull vertices, full dense skull
+    """
     print('\nLOADING CT')
     # Load Preop_CT
     preop_CT = nib.load(ct)
@@ -88,7 +105,8 @@ def segment_skull(
     )
     print('\nSAVING SKULL VERTICES OUTPUT TO:', file_name)
     feature_CT = nib.nifti1.Nifti1Image(voxel_rem, preop_CT.affine, header=preop_CT.header)
-    nib.nifti1.save(feature_CT, file_name)
+    if save:
+      nib.nifti1.save(feature_CT, file_name)
 
     print('\n CREATING INTERMEDIARY FOR PIN TIP SEGMENTATION')
     full_skull_voxel = rd.long_to_voxels(full_skull, preop_CT_data.shape)
@@ -98,7 +116,10 @@ def segment_skull(
     )
     print('\n\tSAVING DENSE SKULL INTERMEDIARY OUTPUT TO:', dense_file_name)
     dense_skull_features = nib.nifti1.Nifti1Image(full_skull_voxel, preop_CT.affine, header=preop_CT.header)
-    nib.nifti1.save(dense_skull_features, dense_file_name)
+    if save:
+      nib.nifti1.save(dense_skull_features, dense_file_name)
+
+    return feature_CT, dense_skull_features
 
 if __name__ == '__main__':
   parser = argparse.ArgumentParser(description="Segment Skull from Preoperative CT Scans")
