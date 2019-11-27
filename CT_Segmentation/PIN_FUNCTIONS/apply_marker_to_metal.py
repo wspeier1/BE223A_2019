@@ -69,9 +69,9 @@ def apply_marker_to_metal(mloc_dict,
             out_name = os.path.join(output_folder, figname)
             fig.savefig(out_name,dpi=300, bbox_inches='tight')
             #make sure to save under fig, since it was opened with a handle
-            #plt.close()
+            plt.close()
 
-        plt.show()
+        #plt.show()
 
 
 

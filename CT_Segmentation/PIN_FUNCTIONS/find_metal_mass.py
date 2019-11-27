@@ -11,14 +11,27 @@ def find_metal_mass(section,
                     my,
                     metal_value,
                     depth,
-                    lower_val=0.85,
-                    upper_val=1.1):
+                    lower_val=0.95,
+                    upper_val=1.1,
+                    image_orient = 'PIR'):
     
     import numpy as np
     from is_point_in_hull import is_point_in_hull
     
     #upper_val = 1.15 #110% of incoming value
     #lower_val = 0.85
+    
+    #if PIR orientation, the python order should be rows start from Ant and
+    #go to Post, the columns should start superior and move towards inferior.
+    #The slice should start at 0 being Left and move to the Right
+    print('Image Orientation being used is: ', image_orient)
+#    if (image_orient == 'PIR'):
+#        print('row = A-P,col = S-I, z = L-R')
+#    else:
+#        print('!!! DIFFERING orientation found !!!')
+    
+    
+    
     row1,col1 = np.shape(section) #section.shape() #should be just one slice
     #output_coordinates = set()
 

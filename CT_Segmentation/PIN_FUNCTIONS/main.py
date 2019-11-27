@@ -13,6 +13,7 @@ from scipy import ndimage
 import scipy.io as sio
 from scipy import signal  #for convolution filtering
 #import cv2 as cv2
+import pdb                #python debugger, use pdb.set_trace() to stop
 
 from get_dirs import get_dirs
 from get_nii_files import get_nii_files
@@ -25,6 +26,8 @@ from get_center_hull import get_center_hull
 from scale_hull import scale_hull
 from find_metal_mass import find_metal_mass
 from get_metal_contrast import get_metal_contrast
+from get_histo_vals import get_histo_vals
+from downsample_dense_skull import downsample_dense_skull
 
 def get_pin_locations(input_directory = '/home/kgonzalez/BE223A_2019/data/',
          output_image_base = '/home/kgonzalez/BE223A_2019/CT_Segmentation/PIN_NII',
@@ -46,7 +49,7 @@ def get_pin_locations(input_directory = '/home/kgonzalez/BE223A_2019/data/',
 # Set the options for running over the entire data set and creating images
 # =============================================================================
     run_all = 0 #set to 1 to go through every code block
-    show_figs = 0
+    show_figs = 1
     write_figs = 0
 
 
@@ -190,13 +193,39 @@ def get_pin_locations(input_directory = '/home/kgonzalez/BE223A_2019/data/',
         f = nii_input_file
         img = nib.load(f)
         data = img.get_fdata()
-        
+
         # Show original image
         print('NII filename opened is ',f)
-        
-
+     
 # =============================================================================
-#       Remove any NaN values before running over this data  
+#  Get the image orientation from the NIFTI header
+#  The orientation will correspond to each of the three axes in the data
+#  For our example, it will return  ('P', 'I', 'R'), so data[X,:,:] will go
+#  from Anterior to Posterior, data[:,X,:] will go from Superior to Inferior
+#  and data[:,:,X] goes from Left to Right
+# =============================================================================
+        orientation = nib.aff2axcodes(img.affine)
+        print('Image Orientation: ', orientation)
+        orientation = orientation[0] + orientation[1] + orientation[2]
+        if (orientation == 'PIR'):
+            #the Z axis moves us from Left to Right
+            zlr =1
+        else:
+            zlr=0
+        plt.figure()
+        plt.imshow(data[:,:,14],cmap='bone')
+        plt.xlabel('Superior to Inferior')
+        plt.ylabel('Anterior to Posterior')
+        plt.title('Orientation Sample')
+
+        
+# =============================================================================
+#       Get the range of most used voxel values in cube
+# =============================================================================
+        #crange = get_histo_vals(data,numbins=200)
+        
+# =============================================================================
+#        Remove any NaN values before running over this data          
 # =============================================================================
         sx,sy,sz = np.shape(data)
         
@@ -214,10 +243,12 @@ def get_pin_locations(input_directory = '/home/kgonzalez/BE223A_2019/data/',
 #  Get range of values in data
 # =============================================================================
         # -- to be updated ---
-        #crange = get_metal_contrast(data,numbins=200)
+        #crange = get_metal_contrast(stacked,numbins=200)
 
 
-
+# =============================================================================
+#  Generate the blank NIFTI array used for final output
+# =============================================================================
         #
         # Create a binary NIFTI file the same size as our input data
         #
@@ -237,19 +268,29 @@ def get_pin_locations(input_directory = '/home/kgonzalez/BE223A_2019/data/',
         #check for NII hull files first, otherwise check to see if a .mat version is
         #available
         #
+        hull_dense_files = get_nii_files(main_directory,dir_list, file_list, "dense",".nii")
         hull_nii_files = get_nii_files(main_directory,dir_list, file_list, "hull",".nii")
         hull_mat_files = get_nii_files(main_directory, dir_list,file_list, "hull", ".mat")
         
         print('folder is ',folder_key[patient_id])
         
-        
-        
-        
-        if (hull_nii_files.get(folder_key[patient_id],'NONE') != 'NONE'):
+        dense_hull_present =0 #we don't need to scale up the dense hull
+        if (hull_dense_files.get(folder_key[patient_id],'NONE') != 'NONE'):
+            hull_present =1
+            print(hull_dense_files[folder_key[patient_id]])
+            print('folder key hull is ',hull_dense_files[folder_key[patient_id]])
+            
+            hull_file = os.path.join(main_directory ,
+                                    folder_key[patient_id],
+                                    hull_dense_files.get(folder_key[patient_id],'NONE'))
+            hull_data = load_hull_file(hull_file)
+            print(np.shape(hull_data))
+            dense_hull_present = 1
+        elif(hull_nii_files.get(folder_key[patient_id],'NONE') != 'NONE'):
             hull_present = 1
             print(hull_nii_files[folder_key[patient_id]])
-            a=folder_key[patient_id]
-            hull_nii_files[a]
+            #a=folder_key[patient_id]
+            #hull_nii_files[a]
             print('folder key hull is ',hull_nii_files[folder_key[patient_id]])
         
             #patientid = 'subject_5'
@@ -327,6 +368,15 @@ def get_pin_locations(input_directory = '/home/kgonzalez/BE223A_2019/data/',
 
         
         
+# =============================================================================
+#  Downsample skull hull, if needed
+# =============================================================================
+        
+        #
+        #  DEBUG DEBUG DEBUG
+        #
+        if (dense_hull_present == 1):
+            hull_data = downsample_dense_skull(hull_data, slicenum=140)
 
     ################################################################################
     #Assign hull points from cube to dictionary. Dictionary points can be used to 
@@ -381,13 +431,54 @@ def get_pin_locations(input_directory = '/home/kgonzalez/BE223A_2019/data/',
     
 # =============================================================================
 #  Expand the hull to fit skull a bit more. If no hull nifit was found, 
-#  skip this step for now
+#  skip this step for now. Samir's custom hull will not need this step, so 
+#  this is only done for the default .NII and .mat files with our sample data
+#  set
 # =============================================================================
-        print('Starting Skull Expansion for ',im_filename)
-        hx,hy,hz = np.shape(stacked) #get size of newly created stack image
-        if (hull_present == 1):
+        if (dense_hull_present == 0):
+        
+            print('Starting Skull Expansion for ',im_filename)
+            hx,hy,hz = np.shape(stacked) #get size of newly created stack image
+            if (hull_present == 1):
+                total_slices = hz #total number of slices in the data
+                mx,my,dx,dy = get_center_hull(hz, hull_dict)
+            
+                #debug outputs
+                print('dx type is ',type(dx))
+                print('mx type is ', type(mx))
+                
+                #for ii in mx:
+                #    print(ii)
+            
+                print('All keys found')
+            
+            
+    # =============================================================================
+    # Scale up the input hull by sf %
+    # =============================================================================
+                sf= 1.20 #1.02
+                if (dense_hull_present == 0):
+                    expanded_hull_dict = scale_hull(hz, mx, my,centroid,sf)
+            
+                #print(mx,my)
+                #print(len(expanded_hull_dict))
+            
+            
+                if (show_figs == 1):
+                    scaled_hull_directory = os.path.join(image_directory,
+                                                         'SCALED_HULL_OVERLAY')
+                    apply_marker_to_metal(expanded_hull_dict, 
+                                        stacked,0,
+                                        cmapin='bone',
+                                        marker_color='g',
+                                        write_to_disk =write_figs,
+                                        output_folder = scaled_hull_directory)
+        else:
+            print('HULL SCALING NOT USED WITH DENSE SKULL')
+            hx,hy,hz = np.shape(stacked) #get size of newly created stack image
             total_slices = hz #total number of slices in the data
             mx,my,dx,dy = get_center_hull(hz, hull_dict)
+            expanded_hull_dict = deepcopy(hull_dict)
         
             #debug outputs
             print('dx type is ',type(dx))
@@ -397,29 +488,6 @@ def get_pin_locations(input_directory = '/home/kgonzalez/BE223A_2019/data/',
             #    print(ii)
         
             print('All keys found')
-        
-        
-# =============================================================================
-# Scale up the input hull by sf %
-# =============================================================================
-            sf= 1.20 #1.02
-            expanded_hull_dict = scale_hull(hz, mx, my,centroid,sf)
-        
-            #print(mx,my)
-            #print(len(expanded_hull_dict))
-        
-        
-            if (show_figs == 1):
-                scaled_hull_directory = os.path.join(image_directory,
-                                                     'SCALED_HULL_OVERLAY')
-                apply_marker_to_metal(expanded_hull_dict, 
-                                    stacked,0,
-                                    cmapin='bone',
-                                    marker_color='g',
-                                    write_to_disk =write_figs,
-                                    output_folder = scaled_hull_directory)
-    
-    
     ###############################################################################
     #'''
     #CHECK THE CENTER POINT OF HULLS
@@ -470,10 +538,11 @@ def get_pin_locations(input_directory = '/home/kgonzalez/BE223A_2019/data/',
                                     dy,
                                     mx,
                                     my,
-                                    metal_value = 2000, 
+                                    metal_value = 2300, 
                                     depth=1,
                                     lower_val=0.95,   
-                                    upper_val = 15.50)
+                                    upper_val = 15.50,
+                                    image_orient = orientation)
             #upped upper_val to 15x to make sure even the really high voxel
             #values for DB06 are accounted for. A histogram function will be
             #needed to keep this within a specific range. Setting this value
