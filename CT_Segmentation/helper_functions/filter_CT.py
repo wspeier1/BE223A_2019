@@ -4,7 +4,7 @@ from skimage.feature import canny
 from skimage.draw import circle_perimeter
 from typing import List, Tuple
 from scipy.spatial import ConvexHull
-from scipy.ndimage import gaussian_laplace
+from scipy import ndimage
 from matplotlib.path import Path
 import helper_functions.reshape_data as rd
 import helper_functions.manipulate_hull as mh
@@ -124,7 +124,7 @@ def filter_in_hull(long_data: np.ndarray, hull: ConvexHull, filt_out: bool = Fal
   """ Removes data points within a specified convexHull
   
   Arguments:
-      long_data {np.ndarray} -- 4xN array of numpy coordinates
+      long_data {np.ndarray} -- Nx4 array of numpy coordinates
       hull {ConvexHull} -- Computed ConvexHull object
   
   Keyword Arguments:
@@ -132,10 +132,10 @@ def filter_in_hull(long_data: np.ndarray, hull: ConvexHull, filt_out: bool = Fal
         (default: {False})
   
   Returns:
-      np.ndarray -- 4xN filtered long_data
+      np.ndarray -- Nx4 filtered long_data
   """
-  if long_data.shape[0] != 4:
-    raise ValueError('Data must be of shape 4xN, found: ' + str(long_data.shape))
+  if long_data.shape[1] != 4:
+    raise ValueError('Data must be of shape Nx4, found: ' + str(long_data.shape))
   coords = long_data[:,:3]
   is_in_hull = mh.check_in_hull_parallel(coords, hull, 50)
   if filt_out:
@@ -213,7 +213,7 @@ def get_skull_vertices(
       4xN arrays.
   """
 
-  g_filt = gaussian_laplace(filt_ct_data, sigma=sigma)
+  g_filt = ndimage.gaussian_laplace(filt_ct_data, sigma=sigma)
   mmax = min_max_normalize(g_filt)
 
   norm = g_filt.copy()
@@ -228,3 +228,30 @@ def get_skull_vertices(
     print(set(skull_vertices[:,3].tolist()))
     raise ValueError('Not binary')
   return (skull_vertices, full_skull)
+
+def get_largest_connected_components(
+    ct_data: np.ndarray,
+    num_comp: int,
+  ) -> np.ndarray:
+  """ Finds n largest connected components in voxel space data
+  
+  Arguments:
+      ct_data {np.ndarray} -- Voxel space CT data
+      num_comp {int} -- number of largest components
+  
+  Returns:
+      np.ndarray -- voxel space of just largest components in binary
+  """
+  # Label connected components
+  label_im, nb_labels = ndimage.label(ct_data)
+
+  # Find size of components
+  sizes = ndimage.sum(ct_data, label_im, range(nb_labels + 1))
+
+  # Get largest
+  n_largest = sizes[(-sizes).argsort()[num_comp-1]]
+  mask = sizes >= n_largest
+
+  # Return largest connected component
+  binary_img = mask[label_im]
+  return binary_img.astype(float)
