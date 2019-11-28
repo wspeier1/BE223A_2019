@@ -134,6 +134,8 @@ def filter_in_hull(long_data: np.ndarray, hull: ConvexHull, filt_out: bool = Fal
   Returns:
       np.ndarray -- 4xN filtered long_data
   """
+  if long_data.shape[0] != 4:
+    raise ValueError('Data must be of shape 4xN, found: ' + str(long_data.shape))
   coords = long_data[:,:3]
   is_in_hull = mh.check_in_hull_parallel(coords, hull, 50)
   if filt_out:
