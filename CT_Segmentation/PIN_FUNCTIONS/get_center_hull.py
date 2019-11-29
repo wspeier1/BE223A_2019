@@ -39,7 +39,7 @@ def get_center_hull(hz, hull_data):
                 else:
                     xpoints[hslice].append(col)
         
-        print(np.mean(ypoints[hslice]))
+        print('mean of hull ypoints: ',np.mean(ypoints[hslice]))
         meany[hslice]=[]
         meanx[hslice]=[]
         meany[hslice].append(np.mean(ypoints[hslice]))

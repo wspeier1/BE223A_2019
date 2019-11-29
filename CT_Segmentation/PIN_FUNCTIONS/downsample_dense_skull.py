@@ -11,14 +11,18 @@ import pdb
 def downsample_dense_skull(hull_data, slicenum=0):
     
     #get size of input hull data
-    [nrow,ncol,nz] = np.shape(hull_data)
+    [nrow,ncol] = np.shape(hull_data)
+    #
+    # Create a new hull output of 0s
+    #
+    downsampled_hull_data = np.zeros([nrow,ncol])
     
     
-    pdb.set_trace()
+    #pdb.set_trace()
     
     
     
-    [rows,cols] = np.where(hull_data[:,:,slicenum] > 0)
+    [rows,cols] = np.where(hull_data[:,:] > 0)
     
     
     # Get the mean center point of the hull
@@ -98,13 +102,13 @@ def downsample_dense_skull(hull_data, slicenum=0):
     stored=list(stored)
     
     
-    plt.figure()
-    #plt.imshow(hull_data[:,:,slicenum],cmap = 'bone')
-    plt.plot(cols[stored],rows[stored], color='red',
-             markersize=1,marker='.',linestyle='none')
-    #plt.plot(mc,mr,color='green',markersize=16, marker='o')
-    plt.title('Stored full points')
-    plt.show()
+#    plt.figure()
+#    #plt.imshow(hull_data[:,:,slicenum],cmap = 'bone')
+#    plt.plot(cols[stored],rows[stored], color='red',
+#             markersize=1,marker='.',linestyle='none')
+#    #plt.plot(mc,mr,color='green',markersize=16, marker='o')
+#    plt.title('Stored full points')
+#    plt.show()
     
 # =============================================================================
 #     Get a single point around each angle arc around the hull
@@ -115,17 +119,31 @@ def downsample_dense_skull(hull_data, slicenum=0):
         if anglestep in alphaval.keys():
             vals=[]
             vals.append(alphaval.get(anglestep)) #values()
-            midval.extend(vals[int(len(vals)/2)])
+            #
+            # Get the middle distance point
+            dvals=[]
+            for num_angles in range(0,len(vals)):
+                #for every angle in the list, find the distances to get the 
+                #smallest one
+                distance = np.sqrt( np.power(dy[vals[num_angles][0]],2) + 
+                np.power(dx[vals[num_angles][0]],2))
+                dvals.append(distance) #add this distance to the list
+            #get the middle distance to keep
+            svals = np.sort(dvals)
+            middle=int(len(svals)/2) #get the index to the middle distance
+            midval.extend(vals[middle])
             
     
-    plt.figure()
-    plt.plot(rows[midval],cols[midval],'r.', linestyle='none')
-    plt.show()
+#    plt.figure()
+#    plt.plot(rows[midval],cols[midval],'r.', linestyle='none')
+#    plt.show()
     
     
-    
-    
-    
+# =============================================================================
+#     Fill in the new hull values with 1s
+# =============================================================================
+    downsampled_hull_data[rows[midval],cols[midval]] =1
+
     
     
     return downsampled_hull_data

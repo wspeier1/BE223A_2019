@@ -49,7 +49,7 @@ def get_pin_locations(input_directory = '/home/kgonzalez/BE223A_2019/data/',
 # Set the options for running over the entire data set and creating images
 # =============================================================================
     run_all = 0 #set to 1 to go through every code block
-    show_figs = 1
+    show_figs = 0
     write_figs = 0
 
 
@@ -255,7 +255,7 @@ def get_pin_locations(input_directory = '/home/kgonzalez/BE223A_2019/data/',
         numrows, numcols, depth = np.shape(stacked)
     
         output_nii=create_binary_nifti(numrows,numcols, depth)
-        
+        output_nii_point_only=create_binary_nifti(numrows,numcols, depth)
         
     ###############################################################################
     #
@@ -376,8 +376,21 @@ def get_pin_locations(input_directory = '/home/kgonzalez/BE223A_2019/data/',
         #  DEBUG DEBUG DEBUG
         #
         if (dense_hull_present == 1):
-            hull_data = downsample_dense_skull(hull_data, slicenum=140)
+            #hull_slice = deepcopy(hull_data)
+            slice_start= 0
+            [row_hull, col_hull,slice_end] = np.shape(hull_data)
+            hull_slice = np.zeros([row_hull, col_hull, slice_end])
+            for slicenum in range(slice_start, slice_end):
+                [rows_hull,cols_hull] = np.where(hull_data[:,:,slicenum] > 0)
+                if (len(rows_hull) == 0):
+                    #skip this, since no hull in this slice. Keep a slice of 0s
+                    continue
+                else:
+                    hull_slice[:,:,slicenum] = downsample_dense_skull(hull_data[:,:,slicenum],
+                          slicenum=slicenum)
+            hull_data = deepcopy(hull_slice)
 
+        #pdb.set_trace()
     ################################################################################
     #Assign hull points from cube to dictionary. Dictionary points can be used to 
     #overlay onto images for a quick display
@@ -627,6 +640,9 @@ def get_pin_locations(input_directory = '/home/kgonzalez/BE223A_2019/data/',
     #('file', '.ext')
     #>>> os.path.splitext(base)[0]
     
+# =============================================================================
+# Output a cluster of pins within a fixed distance from the skull
+# =============================================================================
     
         #output_nii
         print(folder_key[patient_id])
@@ -643,4 +659,62 @@ def get_pin_locations(input_directory = '/home/kgonzalez/BE223A_2019/data/',
         output_file = os.path.join(nifti_out_folder, output_name)  #'pin_output.nii')
         nib.save(output_img, output_file) #save the new NIFTI file
 
-#main()
+
+
+# =============================================================================
+# Produce single pin points
+# =============================================================================
+#for every metal pointfound, find their distances to the center of the hull
+#keep only the closest one on each pin
+        
+#if we are PIR orientation, look for pins at low rows L-R and high rows L-R
+#dx,dy contains the distances from hull mean to each hull point 
+#mx,my are hull center positions
+#mloc_dict has the metal points for slices with metal protrusions
+        pdb.set_trace()
+        closest_pin_index={} #closest pin point index per slice
+        closest_pin_distance ={} #closest pin point distance from center
+        for key in mloc_dict.keys():#this is every slice
+            points = mloc_dict[key] #all the xy metal points in this slice
+            distance_hull = []
+            for counter, npoints in enumerate(points):
+                dx_hull_metal = np.abs(mx[key][0] - npoints[1])
+                dy_hull_metal = np.abs(my[key][0] - npoints[0])
+                distance_hull.append(np.sqrt(np.power(dx_hull_metal,2) + 
+                                         np.power(dy_hull_metal,2)))
+            lowest_distance_index = np.argmin(distance_hull)
+            #for this slice, lowest_distance is the one closest to the center
+            closest_pin_distance[key] = distance_hull[lowest_distance_index]
+            closest_pin_index[key] = lowest_distance_index
+# Now we have all the closest pin values per each slice (as key). Get the 
+#smallest of these and that will be output to the NIFTI file
+        smallest_distance = 99999 #this will be replaced with the dictionary
+        for key in closest_pin_index.keys():
+            test_value = closest_pin_distance[key] 
+            if (test_value < smallest_distance):
+                smallest_index = key
+                smallest_distance = test_value 
+        print('smallest key for closest point is ',smallest_index)
+        #the smallest point can be found with mloc_dict[key] and 
+        #closest_pin_index[key]. This will give the xy point for this slice 
+        #that is closest to the hull center point
+        #mloc_dict[smallest_index][closest_pin_index[smallest_index]]
+        tip_points =  mloc_dict[smallest_index][closest_pin_index[smallest_index]]
+        output_nii_point_only[tip_points[0],tip_points[1],smallest_index] = 1
+        #output_nii single tip xy to NIFTI file
+        print(folder_key[patient_id])
+        print(nii_files[folder_key[patient_id]])
+        basename = os.path.basename(nii_files[folder_key[patient_id]])
+        print(basename)
+        rawname = os.path.splitext(basename)
+        print(rawname[0])
+        output_name_single_point = rawname[0] + '_PIN_TIP_SINGLE.nii'
+        
+        output_img_single_point = nib.Nifti1Image(output_nii_point_only,
+                                                  img.affine, img.header)
+
+        
+        output_single_file = os.path.join(nifti_out_folder, output_name_single_point)  #'pin_output.nii')
+        nib.save(output_img_single_point, output_single_file) #save the new NIFTI file
+                #output_nii[points[ii][0],points[ii][1],key] = 1
+
