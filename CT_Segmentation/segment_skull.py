@@ -28,7 +28,7 @@ def segment_skull(
     subject: str,
     preview: bool,
     save: bool = True
-  ) -> Tuple(nib.nifti1, nib.nifti1):
+  ) -> Tuple:
     """ Segment out skull
     second output (dense skull) is used as later during pin tip isolation
     
