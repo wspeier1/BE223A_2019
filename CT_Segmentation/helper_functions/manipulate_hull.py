@@ -2,10 +2,9 @@ from scipy.io import loadmat
 from scipy.spatial import ConvexHull
 import numpy as np
 from typing import Tuple, List
-from multiprocessing import Pool
+import multiprocessing as mp
 import helper_functions.reshape_data as rd
 import progressbar
-import tqdm
 
 def load_hull_from_mat(
     hull_path: str,
@@ -71,17 +70,10 @@ def isInHull(coords, convex_hull: ConvexHull):
     isInHull = np.all((A @ np.transpose(coords)) <= np.tile(-b,(1,len(coords))),axis=0)
     return isInHull
 
-def returnInHull(data):
-  return data[0][isInHull(data[0], data[1])]
-
-def returnOutHull(data):
-  return data[0][~isInHull(data[0], data[1])]
-
   
 def check_in_hull_parallel(
     coords: np.ndarray,
     convex_hull: ConvexHull,
-    filt_out: bool,
     chunk_size: int=50
   ) -> List[bool]:
   """ Checks if coordinates within hull
@@ -112,11 +104,8 @@ def check_in_hull_parallel(
   #print(inputs)
   results = []
   print('...Computing if chunks in Hull')
-  with Pool() as pool:
-    if filt_out:
-      results = list(tqdm.tqdm(pool.imap_unordered(returnInHull, inputs), total=len(inputs)))
-    else:
-      results = list(tqdm.tqdm(pool.imap_unordered(returnOutHull, inputs), total=len(inputs)))
+  with mp.Pool() as pool:
+    results = pool.starmap(isInHull, inputs)
   print('\tDone')
 
   return np.concatenate(results)

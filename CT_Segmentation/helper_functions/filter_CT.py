@@ -137,7 +137,11 @@ def filter_in_hull(long_data: np.ndarray, hull: ConvexHull, filt_out: bool = Fal
   if long_data.shape[1] != 4:
     raise ValueError('Data must be of shape Nx4, found: ' + str(long_data.shape))
   coords = long_data[:,:3]
-  return mh.check_in_hull_parallel(coords, hull, filt_out)
+  is_in_hull = mh.check_in_hull_parallel(coords, hull, 500)
+  if filt_out:
+    return long_data[is_in_hull]
+  else:
+    return long_data[~is_in_hull]
 
 def is_above(point, equation) -> bool:
   """ Check if an x,y pair of coordinates lies below a line
