@@ -1,0 +1,41 @@
+% testing for trans
+clc;clear;close all;%rng('default') 
+point_3d(1,:)=10*rand(100,1);
+point_3d(2,:)=10*rand(100,1);
+point_3d(3,:)=10*rand(100,1)-20;
+% rotation
+r=rand(3,1);
+center_rot=[0;0;-20];
+epsilon=0.05;
+plane_z=-50;
+R=rotationVectorToMatrix(r);
+point_3d_roted=R*(point_3d-center_rot)+center_rot;
+
+[point_2d] = Project_point(point_3d_roted,plane_z);
+% create translation
+point_3d = point_3d_roted;
+trans=[4;-7;-5];
+point_3d = point_3d + trans;
+[project_point_2d] = Project_point(point_3d,plane_z);
+% icp 
+s=4;
+temp_point_3d = point_3d;
+[RotMat,best_TransVec,dataOut, best_dis]=icp(point_2d,project_point_2d);
+best_distance = s;
+for distance = s-5:(10/100):s+5
+    temp_point_3d(3,:)=point_3d(3,:)+distance;
+    [project_point_2d] = Project_point(temp_point_3d,plane_z);
+    [RotMat,TransVec,dataOut, dis]=icp(point_2d,project_point_2d);
+    if dis<best_dis
+        best_dis=dis;
+        best_TransVec=TransVec;
+        best_distance=distance;
+    end
+end
+TransVec = -best_TransVec/plane_z*(distance-20);
+
+
+
+
+
+
