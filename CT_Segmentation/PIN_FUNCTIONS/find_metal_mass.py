@@ -24,7 +24,7 @@ def find_metal_mass(section,
     #if PIR orientation, the python order should be rows start from Ant and
     #go to Post, the columns should start superior and move towards inferior.
     #The slice should start at 0 being Left and move to the Right
-    print('Image Orientation being used is: ', image_orient)
+    #print('Image Orientation being used is: ', image_orient)
 #    if (image_orient == 'PIR'):
 #        print('row = A-P,col = S-I, z = L-R')
 #    else:

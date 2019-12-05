@@ -28,6 +28,8 @@ from find_metal_mass import find_metal_mass
 from get_metal_contrast import get_metal_contrast
 from get_histo_vals import get_histo_vals
 from downsample_dense_skull import downsample_dense_skull
+from get_quadrant import get_quadrant
+from get_tip_point import get_tip_point
 
 def get_pin_locations(input_directory = '/home/kgonzalez/BE223A_2019/data/',
          output_image_base = '/home/kgonzalez/BE223A_2019/CT_Segmentation/PIN_NII',
@@ -672,6 +674,19 @@ def get_pin_locations(input_directory = '/home/kgonzalez/BE223A_2019/data/',
 #mx,my are hull center positions
 #mloc_dict has the metal points for slices with metal protrusions
         pdb.set_trace()
+        
+# =============================================================================
+# Determine quadrants of the image
+# - for every slice, get the center of its hull and determine what quadrant 
+#   you're in. This works for PIR orientation, for now
+# =============================================================================
+        lower_hemisphere, upper_hemisphere =get_quadrant(mloc_dict,mx,my,sz)
+
+
+        get_tip_point(lower_hemisphere)
+        
+        get_tip_point(upper_hemisphere)
+
         closest_pin_index={} #closest pin point index per slice
         closest_pin_distance ={} #closest pin point distance from center
         for key in mloc_dict.keys():#this is every slice
