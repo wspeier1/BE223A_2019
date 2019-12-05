@@ -1,21 +1,22 @@
-function [theta_x, theta_y, theta_z] = optimization( point_2d,  point_3d, plane_z, epoch, learning_rate, batch_size)
-    % optimization given point_2d and rotated point_3d
-    % sample call:
-    % [theta_x, theta_y, theta_z] = optimization( subfluoro,  subct, -60, 5000, 0.01, 1)
+function [theta_x, theta_y, theta_z, loss] = optimization( point_2d, ...
+    point_3d, plane_z, epoch, learning_rate)
+    % optimization for  translation 
+    % epoch: number of iteration 
+    
     theta_x=rand(1,1);
     theta_y=rand(1,1);
     theta_z=rand(1,1);
     for e = 1:epoch
-        project_point_2d = Project_point(point_3d+[theta_x; theta_y;theta_z],plane_z);
+        project_point_2d = Project_point((point_3d+[theta_x; theta_y;theta_z]),plane_z);
         index_2d = close_point(point_2d,project_point_2d);
-        loss = floss(point_2d,project_point_2d,0.1, theta_x, theta_y, theta_z, index_2d);
-        [gradient_x, gradient_y, gradient_z] = gradient(point_2d , project_point_2d, point_3d,theta_x,theta_y, theta_z, plane_z,0.1, index_2d);
+        [gradient_x, gradient_y, gradient_z] = gradient(point_2d , project_point_2d, point_3d,theta_x,theta_y, theta_z, plane_z, index_2d);
         theta_x = theta_x - learning_rate*gradient_x;
         theta_y = theta_y - learning_rate*gradient_y;
         theta_z = theta_z - learning_rate*gradient_z;
+        loss = floss(point_2d,project_point_2d, index_2d);
             %if isnan(theta_x)
             %    break
             %end
-        loss
+        %loss;
     end
 end

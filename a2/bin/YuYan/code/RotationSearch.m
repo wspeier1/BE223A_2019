@@ -1,4 +1,4 @@
-function [best_r] = RotationSearch(point_2d,point_3d,epsilon,center_rot,plane_z,plot_flag)
+function [best_r] = RotationSearch(point_2d,point_3d,epsilon,center_rot,plane_z,plot_flag, timeLimit)
 %ROTATIONSEARCH :Find best rotation with a rotation center(center_rot)
 %   
 %   point_2d:       input 2D point
@@ -11,7 +11,7 @@ function [best_r] = RotationSearch(point_2d,point_3d,epsilon,center_rot,plane_z,
 %   best_r£º        output global optimal rotation
 
 %=initialize the parameters
-
+time0 = tic;
 r_lu=[-pi,-pi,-pi,pi,pi,pi]'; %rotation domain
 best_r=[0;0;0];               
 best_Q=0;                     
@@ -90,8 +90,10 @@ while(norm(best_branch(1:3)-best_branch(4:6))>1e-6)
         addpoints(h_V,iter,V);
         drawnow
     end
+    if toc(time0)>timeLimit
+        break
+    end
     
 end
 
 end
-
