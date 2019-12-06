@@ -680,43 +680,41 @@ def get_pin_locations(input_directory = '/home/kgonzalez/BE223A_2019/data/',
 # - for every slice, get the center of its hull and determine what quadrant 
 #   you're in. This works for PIR orientation, for now
 # =============================================================================
-        lower_hemisphere, upper_hemisphere =get_quadrant(mloc_dict,mx,my,sz)
+        lower_hemisphere, upper_hemisphere,lower_marker, upper_marker = \
+            get_quadrant(mloc_dict,mx,my,sz)
 
 
-        get_tip_point(lower_hemisphere)
+        lower_tip_points,tip_slice_num= get_tip_point(lower_hemisphere,mx,my, \
+                                                      lower_marker,mloc_dict)
+
+# =============================================================================
+# WRITE LOWER HEMISPHERE OF POINTS TO OUTPUT NIFTI FILE
+# =============================================================================
+        output_nii_point_only[lower_tip_points[0][0], \
+                              lower_tip_points[0][1], \
+                              tip_slice_num[0]] = 1
+
+        output_nii_point_only[lower_tip_points[1][0], \
+                              lower_tip_points[1][1], \
+                              tip_slice_num[1]] = 1
         
-        get_tip_point(upper_hemisphere)
+        
+        upper_tip_points,tip_slice_num = get_tip_point(upper_hemisphere,mx,my, \
+                                                      upper_marker,mloc_dict)
+        
+# =============================================================================
+# WRITE UPPER HEMISPHERE OF POINTS TO OUTPUT NIFTI FILE
+# =============================================================================
+        output_nii_point_only[upper_tip_points[0][0], \
+                              upper_tip_points[0][1], \
+                              tip_slice_num[0]] = 1
 
-        closest_pin_index={} #closest pin point index per slice
-        closest_pin_distance ={} #closest pin point distance from center
-        for key in mloc_dict.keys():#this is every slice
-            points = mloc_dict[key] #all the xy metal points in this slice
-            distance_hull = []
-            for counter, npoints in enumerate(points):
-                dx_hull_metal = np.abs(mx[key][0] - npoints[1])
-                dy_hull_metal = np.abs(my[key][0] - npoints[0])
-                distance_hull.append(np.sqrt(np.power(dx_hull_metal,2) + 
-                                         np.power(dy_hull_metal,2)))
-            lowest_distance_index = np.argmin(distance_hull)
-            #for this slice, lowest_distance is the one closest to the center
-            closest_pin_distance[key] = distance_hull[lowest_distance_index]
-            closest_pin_index[key] = lowest_distance_index
-# Now we have all the closest pin values per each slice (as key). Get the 
-#smallest of these and that will be output to the NIFTI file
-        smallest_distance = 99999 #this will be replaced with the dictionary
-        for key in closest_pin_index.keys():
-            test_value = closest_pin_distance[key] 
-            if (test_value < smallest_distance):
-                smallest_index = key
-                smallest_distance = test_value 
-        print('smallest key for closest point is ',smallest_index)
-        #the smallest point can be found with mloc_dict[key] and 
-        #closest_pin_index[key]. This will give the xy point for this slice 
-        #that is closest to the hull center point
-        #mloc_dict[smallest_index][closest_pin_index[smallest_index]]
-        tip_points =  mloc_dict[smallest_index][closest_pin_index[smallest_index]]
-        output_nii_point_only[tip_points[0],tip_points[1],smallest_index] = 1
-        #output_nii single tip xy to NIFTI file
+        output_nii_point_only[upper_tip_points[1][0], \
+                              upper_tip_points[1][1], \
+                              tip_slice_num[1]] = 1
+
+
+
         print(folder_key[patient_id])
         print(nii_files[folder_key[patient_id]])
         basename = os.path.basename(nii_files[folder_key[patient_id]])

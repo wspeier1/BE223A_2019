@@ -67,8 +67,8 @@ def get_quadrant(mloc_dict,mx,my,nz):
     #if we go more than 10 slices between metal points, they're likely not 
     #part of the same pin and this should constitute a new pin or set
     
-    mid_slice = np.floor(nz/2) #this will be the cutoff to catch a new pin pair
-    
+    mid_slice = slice_list[slice_change[0][0]+1]#np.floor(nz/2) #this will be the cutoff to catch a new pin pair
+    ### better way to extract the array value as scalar????
 # =============================================================================
 # Break up the pins per hemisphere by the quadrant they're in
 # =============================================================================
@@ -77,20 +77,31 @@ def get_quadrant(mloc_dict,mx,my,nz):
     full_list[1]=[]
     #full_points are the row,col values for points, with one list for each 
     #quadrant
+    slice_marker={}
+    slice_marker[0]=[]
+    slice_marker[1]=[]
+    slice_marker[2]=[]
+    slice_marker[3]=[]
     full_points={}
     full_points[0] = []
     full_points[1] = []
     full_points[2] = []
     full_points[3] = []
     
-    lower_hemisphere = []
-    upper_hemisphere = []
+    lower_hemisphere = {}
+    upper_hemisphere = {}
     first_quad = 99 #placeholder for the first quadrant found in the hemisphere
     for count,ii in enumerate(mloc_dict.keys()):
         if (ii ==  mid_slice):
             full_list={} #container for all the rc points in this hemisphere
             #copy out the lower hemisphere and reuse the container
             lower_hemisphere = deepcopy(full_points)
+            lower_marker = deepcopy(slice_marker)
+            slice_marker ={}
+            slice_marker[0]=[]
+            slice_marker[1]=[]
+            slice_marker[2]=[]
+            slice_marker[3]=[]
             full_points={}
             full_points[0] = []
             full_points[1] = []
@@ -119,6 +130,7 @@ def get_quadrant(mloc_dict,mx,my,nz):
                 
                 for jcounter,jj in enumerate(quad_total[ii]):
                     full_points[qcheck[0]].append(mloc_dict[ii][jcounter])
+                    slice_marker[qcheck[0]].append(ii)
                     #full_list[qcheck[0]].append(jj)
             elif (len(qcheck) ==2): #there are points from different quadrants here
                 qcheck = set(quad_total[ii])
@@ -130,8 +142,10 @@ def get_quadrant(mloc_dict,mx,my,nz):
                 for jcounter,jj in enumerate(quad_total[ii]):
                     if (jj == qcheck[0]):
                         full_points[qcheck[0]].append(mloc_dict[ii][jcounter])
+                        slice_marker[qcheck[0]].append(ii)
                     else:
                         full_points[qcheck[1]].append(mloc_dict[ii][jcounter])
+                        slice_marker[qcheck[1]].append(ii)
             else:
                 print('!!!! Found a 3rd or empty quadrant return !!!!')
 
@@ -142,6 +156,7 @@ def get_quadrant(mloc_dict,mx,my,nz):
                 
                 for jcounter,jj in enumerate(quad_total[ii]):
                     full_points[qcheck[0]].append(mloc_dict[ii][jcounter])
+                    slice_marker[qcheck[0]].append(ii)
                     #full_list[qcheck[0]].append(jj)
             elif (len(qcheck) ==2): #there are points from different quadrants here
                 qcheck = set(quad_total[ii])
@@ -153,11 +168,14 @@ def get_quadrant(mloc_dict,mx,my,nz):
                 for jcounter,jj in enumerate(quad_total[ii]):
                     if (jj == qcheck[0]):
                         full_points[qcheck[0]].append(mloc_dict[ii][jcounter])
+                        slice_marker[qcheck[0]].append(ii)
                     else:
                         full_points[qcheck[1]].append(mloc_dict[ii][jcounter])
+                        slice_marker[qcheck[1]].append(ii)
             else:
                 print('!!!! Found a 3rd or empty quadrant return !!!!')
 
     upper_hemisphere = deepcopy(full_points)
+    upper_marker = deepcopy(slice_marker)
 
-    return lower_hemisphere, upper_hemisphere
+    return lower_hemisphere, upper_hemisphere,lower_marker, upper_marker
