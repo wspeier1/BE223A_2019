@@ -50,9 +50,9 @@ def get_pin_locations(input_directory = '/home/kgonzalez/BE223A_2019/data/',
 # =============================================================================
 # Set the options for running over the entire data set and creating images
 # =============================================================================
-    run_all = 0 #set to 1 to go through every code block
-    show_figs = 0
-    write_figs = 0
+    run_all = 1 #set to 1 to go through every code block
+    show_figs = 1
+    write_figs = 1
 
 
 # =============================================================================
@@ -673,7 +673,7 @@ def get_pin_locations(input_directory = '/home/kgonzalez/BE223A_2019/data/',
 #dx,dy contains the distances from hull mean to each hull point 
 #mx,my are hull center positions
 #mloc_dict has the metal points for slices with metal protrusions
-        pdb.set_trace()
+        #pdb.set_trace()
         
 # =============================================================================
 # Determine quadrants of the image
@@ -690,11 +690,13 @@ def get_pin_locations(input_directory = '/home/kgonzalez/BE223A_2019/data/',
 # =============================================================================
 # WRITE LOWER HEMISPHERE OF POINTS TO OUTPUT NIFTI FILE
 # =============================================================================
-        output_nii_point_only[lower_tip_points[0][0], \
+        if (0 in tip_slice_num.keys()):
+            output_nii_point_only[lower_tip_points[0][0], \
                               lower_tip_points[0][1], \
                               tip_slice_num[0]] = 1
 
-        output_nii_point_only[lower_tip_points[1][0], \
+        if (1 in tip_slice_num.keys()):
+            output_nii_point_only[lower_tip_points[1][0], \
                               lower_tip_points[1][1], \
                               tip_slice_num[1]] = 1
         
@@ -705,13 +707,15 @@ def get_pin_locations(input_directory = '/home/kgonzalez/BE223A_2019/data/',
 # =============================================================================
 # WRITE UPPER HEMISPHERE OF POINTS TO OUTPUT NIFTI FILE
 # =============================================================================
-        output_nii_point_only[upper_tip_points[0][0], \
-                              upper_tip_points[0][1], \
-                              tip_slice_num[0]] = 1
+        if (0 in tip_slice_num.keys()):
+            output_nii_point_only[upper_tip_points[0][0], \
+                                  upper_tip_points[0][1], \
+                                  tip_slice_num[0]] = 1
 
-        output_nii_point_only[upper_tip_points[1][0], \
-                              upper_tip_points[1][1], \
-                              tip_slice_num[1]] = 1
+        if (1 in tip_slice_num.keys()):
+            output_nii_point_only[upper_tip_points[1][0], \
+                                  upper_tip_points[1][1], \
+                                  tip_slice_num[1]] = 1
 
 
 

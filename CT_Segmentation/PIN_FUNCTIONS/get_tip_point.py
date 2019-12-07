@@ -44,6 +44,10 @@ def get_tip_point(hemisphere_dict,mx,my, slice_marker,mloc_dict):
     
     for key in combined_dict.keys(): #loop through both hemis
         distance_hull=[]
+        if (len(combined_dict[key]) == 0):
+            #there weren't any pins found in this hemisphere
+            print('No points found in this hemi')
+            continue #skip over this one
         for counter,npoints in enumerate(combined_dict[key]):
             print('counter=',counter)
             slice_number = combined_slice_dict[key][counter]

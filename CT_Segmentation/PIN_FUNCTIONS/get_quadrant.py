@@ -66,8 +66,11 @@ def get_quadrant(mloc_dict,mx,my,nz):
     #    slice_list[slice_change]
     #if we go more than 10 slices between metal points, they're likely not 
     #part of the same pin and this should constitute a new pin or set
-    
-    mid_slice = slice_list[slice_change[0][0]+1]#np.floor(nz/2) #this will be the cutoff to catch a new pin pair
+    if (len(slice_change[0]) == 0):
+        #there weren't enough points to get a big gap
+        mid_slice = slice_list[-1] #use the entire list
+    else:
+        mid_slice = slice_list[slice_change[0][0]+1]#np.floor(nz/2) #this will be the cutoff to catch a new pin pair
     ### better way to extract the array value as scalar????
 # =============================================================================
 # Break up the pins per hemisphere by the quadrant they're in
@@ -90,6 +93,9 @@ def get_quadrant(mloc_dict,mx,my,nz):
     
     lower_hemisphere = {}
     upper_hemisphere = {}
+    
+    lower_marker = {}
+    upper_marker = {}
     first_quad = 99 #placeholder for the first quadrant found in the hemisphere
     for count,ii in enumerate(mloc_dict.keys()):
         if (ii ==  mid_slice):
@@ -178,4 +184,5 @@ def get_quadrant(mloc_dict,mx,my,nz):
     upper_hemisphere = deepcopy(full_points)
     upper_marker = deepcopy(slice_marker)
 
+    print('--- GET QUADRANT COMPLETED')
     return lower_hemisphere, upper_hemisphere,lower_marker, upper_marker
