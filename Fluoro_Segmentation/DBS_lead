@@ -1,0 +1,409 @@
+# required packages are cv2, numpy, matplotlib.pyplot
+# input is fluoroscopy image in .tif format (note .jpg format doesn't work)
+
+import cv2 
+import numpy as np 
+import matplotlib.pyplot as plt
+import math
+
+# only two parameters need to be changed:
+# 1. input file path
+input_image = "/Users/Jenny/beta testing/fluoro_subject_3.tif"
+
+# 2. output file path folder
+output_path = "/Users/Jenny/beta testing/"
+# output is one text file containing (x, y) coordinates of DBS lead as a straight line
+# second output is DBS lead drawn as a white line on original input image, (.jpg)
+
+# ******************************************************************************
+# step 1 find frame, terminal end of DBS lead is always near the center of
+# this circular frame
+  
+# Read image. 
+img_c = cv2.imread(input_image, cv2.IMREAD_COLOR) 
+  
+# Convert to grayscale. 
+gray = cv2.cvtColor(img_c, cv2.COLOR_BGR2GRAY) 
+  
+# Blur using 3 * 3 kernel. 
+gray_blurred = cv2.blur(gray, (3, 3)) 
+
+
+# fluoroscopy images are not all the same size
+# circles' radiuses are between 8% - 22% of image size (on the x-axis)
+# subject1 is 755 x 947, most other subjects are 1024 x 1280
+
+# find image size on the x-axis axis
+one_ar_3d = np.asarray(img_c) # this is 3D array
+one_arr = one_ar_3d[:,:,:0]
+horizontal_size = np.shape(one_arr)[1]
+min_radius = int(horizontal_size * 0.08)
+max_radius = int(horizontal_size * 0.22)
+
+# Apply Hough transform on the blurred image. 
+detected_circles = cv2.HoughCircles(gray_blurred,  
+                   cv2.HOUGH_GRADIENT, 1, 30, param1 = 50, 
+               param2 = 40, minRadius = min_radius, maxRadius = max_radius) 
+# min radius is 80, max radius is 150
+
+# total number of circles found:
+num_circles = (np.shape(detected_circles))[1]
+
+# function subject_num extracts subject number, 
+# input is .tif file pathname, output is subject number as 2 digits:
+def subject_num (filepath):
+   # this is last 2 characters before '.tif':s
+   last_two = (filepath.split("."))[0][-2:]
+   if last_two[0] == '_':
+      return last_two[1]
+   else:
+      return last_two
+
+current_subject = subject_num(input_image)
+
+# save this detected_circles, output as a text file
+# circle_out_path = output_path + "all_circles_" + str(current_subject) +".txt"
+circle_pic = "/Users/Jenny/beta testing/detected circles " + str(current_subject) + ".tif"
+# output = open(circle_out_path,'w')
+# output.write("total number of circles found: ")
+# output.write(str(num_circles))
+# output.write('\n')
+# output.write('each row contains: x, y ,radius\n')
+# output.writelines(str(detected_circles))
+# output.close()
+
+# function circles_in_frame accepts 1 parameter, a numpy array (input_array), 
+# output is a filtered numpy array where centers points are restricted to
+# the area
+def filter_circles_in_frame (input_array):
+    circles_in_frame = []
+    for i in input_array[0]:
+        x = i[0]
+        y = i[1]
+        
+        if x >=500 and x <=1100 and y >= 400 and y <=1000:
+            circles_in_frame.append(i)
+
+    frames = np.asarray([circles_in_frame])
+    # print(np.shape(frames))
+    return frames
+
+# draw circles that are detected:
+list_of_centers = []
+
+def draw_circles (input_array):
+   if input_array is not None:
+        
+        # convert the circle parameters a, b and r to integers.
+        input_array = np.uint16(np.around(input_array))
+        
+        for point in input_array[0, :]:
+            a, b, r = point[0], point[1], point[2]
+            
+            # a, b is the coorindate of center, append to list_of_centers
+            center_x = a
+            center_y = b
+            list_of_centers.append([center_x, center_y])
+            
+            # Draw the circumference of the circle.
+            cv2.circle(img_c, (a, b), r, (0, 255, 0), 2)
+            
+            # Draw a small circle (of radius 1) to show the center.
+            cv2.circle(img_c, (a, b), 1, (0, 0, 255), 3)
+            # cv2.imshow("Detected Circle", img_c)
+            # cv2.waitKey(0)
+   cv2.imwrite(circle_pic,img_c)
+
+list_of_circles = filter_circles_in_frame(detected_circles)
+# print("list of circles is ", list_of_circles)
+# draw_circles(list_of_circles)
+
+# list_of_centers is a list
+# return the first of the list because it has the largest accumulator value
+center_of_frame = detected_circles[0][0]
+
+# center_of_frame outputs [687.5 441.5 137.8] for subject_1c.tif, 
+# which is x coordinate, y coordinate, and radius of center of the circle
+
+# print("total number of circles found: ", num_circles)
+# print("frame is located at: (x,y,radius)", center_of_frame)
+
+# ******************************************************************************
+# step 2 line detection
+# out of all straight lines detected, 2 additional parameters are used to
+# narrow down DBS lead: first vertical line of slope >= 2.5; second
+# end point is near the center of the fram
+
+img_l = cv2.imread(input_image) 
+  
+# Convert the img_l to grayscale 
+gray = cv2.cvtColor(img_l,cv2.COLOR_BGR2GRAY) 
+  
+# Apply edge detection method on the image 
+edges = cv2.Canny(gray,80,150,apertureSize = 3) 
+# cv2.imwrite("/Users/Jenny/edges-80-150.jpg",edges)
+# edges is a numpy.ndarray of original image size, (mask)
+
+lines = cv2.HoughLinesP(edges, 1, np.pi/180, 50, maxLineGap=50)
+
+lines_out_path = output_path + "lines_" + str(current_subject) +".jpg"
+
+# for line in lines:
+#    x1, y1, x2, y2 = line[0]
+#    cv2.line(img_l, (x1, y1), (x2, y2), (0, 0, 128), 2)
+# cv2.imwrite(lines_out_path, img_l)
+
+# filter 1/4: find only vertical lines
+vertical_lines = []
+for line in lines:
+   x1 = (line[0])[0]
+   y1 = (line[0])[1]
+   x2 = (line[0])[2]
+   y2 = (line[0])[3]
+    
+   # not perfectly vertical, avoid division by 0, (most likely left border)
+   if x1 != x2: 
+      
+      slope = (y2-y1)/(x2-x1) # equation to calculate slope
+        
+      # fairly vertical line (slope >=1.5, exclude horizontal lines:
+      if slope != 0 and (abs(slope)) >= 1.5: 
+         vertical_lines.append(line) # add this line to filtered list
+
+
+# filter 2/4: lines longer than length 80, (shortest segment has length 126)
+# function length accepts two ends points in the form (x1,y1,x2,y2),
+# and returns the length of this line rounded up to the nearest integer
+# example: length([680,439,738,224]) =>223
+def length (end_points):
+    x1 = end_points[0][0]
+    y1 = end_points[0][1]
+    x2 = end_points[0][2]
+    y2 = end_points[0][3]
+    ans = math.sqrt((x1-x2)**2 + (y1-y2)**2)
+    return int(ans)
+
+vertical_long_lines = list(filter(lambda x: length(x)>=50, vertical_lines))
+
+# print("vertical long lines are ", vertical_long_lines)
+# print("total number of long vertical lines found ", len(vertical_long_lines))
+
+vertical_array = np.asarray(vertical_long_lines)
+
+# a,b,c = vertical_array.shape
+# for i in range (a):
+#     cv2.line(gray, (vertical_array[i][0][0], vertical_array [i][0][1]),
+#             (vertical_array[i][0][2], vertical_array[i][0][3]), (0, 0, 255), 3, cv2.LINE_AA)
+#     cv2.imwrite("/Users/Jenny/long_vertical_lines.jpg", gray)
+            
+# filter 3/4: find point closeset to center of circle
+# receive center point of circle from circle-finding detection
+circle_center_x = int(center_of_frame[0]) # 687
+circle_center_y = int(center_of_frame[1]) # 441
+circle_center = [circle_center_x, circle_center_y]
+
+# define calculate_distance function, accepts 4 parameters, point_x and
+# point_y are x and y coordinates of the given point, center_x and center_y
+# are x and y coordinates of the center of the circle. Function returns 
+# the cartesian distance between these two points
+
+def calculate_distance(point_x,point_y,center_x,center_y):
+   distance = math.sqrt((point_x - center_x)**2 + (point_y - center_y)**2)
+   return distance
+ 
+# function list_distance accepts 2 parameters, list of lines (lol), 
+# where each element contains 4 numbers: x, y cooridinates of two end points,
+# and x,y cooridinate of center of the circle (center), 
+# function returns a new list where the second element is the distance
+# of the closest point to the center of the circle
+def list_distances (lol, center):
+    distances = []
+    circle_x = center[0]
+    circle_y = center[1]
+    
+    # loop over every line in lol
+    for line in lol:
+        point_a_x = line[0][0]
+        point_a_y = line[0][1]
+        point_b_x = line[0][2]
+        point_b_y = line[0][3]
+        
+        # pass to helper function, accept shortest distance
+        dist1 = calculate_distance(point_a_x, point_a_y, circle_x, circle_y)
+        dist2 = calculate_distance(point_b_x, point_b_y, circle_x, circle_y)
+        shortest = min(dist1,dist2)
+        distances.append([line,shortest])
+        
+        # sort lines by their distance in ascending order
+        distances.sort(key = lambda x: x[1])
+    
+    # this is list of x,y coordinates
+    return distances[0][0]
+
+# function to find DBS lead coordinates
+DBS_lead = list_distances(vertical_long_lines,circle_center) 
+
+# filter 4/4: find lines with similar slope
+# convert list into numpy array
+bottom_half = DBS_lead
+
+def on_same_line (half_DBS, all_lines):
+    top_half = []
+    std_x1 = half_DBS[0][0]
+    std_y1 = half_DBS[0][1]
+    std_x2 = half_DBS[0][2]
+    std_y2 = half_DBS[0][3]
+    DBS_slope = (std_y2 - std_y1) / (std_x2 - std_x1)
+    DBS_y_int = std_y1 - DBS_slope * std_x1
+    
+    for line in all_lines:
+        x1 = line[0][0]
+        y1 = line[0][1]
+        x2 = line[0][2]
+        y2 = line[0][3]
+        
+        # if this line is highly similar to standard, eliminate this
+        # because it's the same segment
+        if not ((abs (x1-std_x1)) < 17 and (abs (x2-std_x2)) < 17 and
+        (abs (y1-std_y1)) < 17 and (abs (x2-std_x2)) < 17):
+            
+            # equation of a straight line is y = mx + b
+            m = (y2 - y1) / (x2 - x1)
+            b = y1 - m * x1
+            diff_in_slope = abs(m - DBS_slope)
+            diff_in_int = abs(b - DBS_y_int)
+            
+            # if vertical line is similar to bottom half of DBS lead, 
+            # accept this to likely to be top half of DBS lead
+            if diff_in_slope <= 0.50 and diff_in_int <= 1050:
+                # append to list
+                top_half.append(line)
+            
+    return np.asarray(top_half)
+
+other_half = on_same_line(bottom_half, vertical_long_lines)
+
+# *****************************************************************************
+
+# Step 3 examine the output of bottom half, and top half, separated by 
+# circular frame
+
+# function check_top_half examines the output of these 4 filters, there are 3 possible scenarios:
+# scenario 1: length of top_half is 1, then only found original input bottom half, can't find top half.
+# there are two scenarios in this case,
+# A. if line is too far away from center of circle, then just extend to the center of the circle
+# B. if line is too short, (only found the bottom half), then extend to certain length
+
+# scenario 2: length of top half is exactly 2, then found the top portion of DBS lead, simply connect
+# this top portion with bottom portion
+
+# scenario 3:length of top_half is >2, then more than one similar slope lines were found, need to filter to
+# line with furthest point only
+# if (len(other_half)) > 2:
+#     top_half = furthest_line(other_half)
+#     return top_half 
+
+# equation of a straight line is y = mx + b
+m = (y2 - y1) / (x2 - x1)
+b = y1 - m * x1
+
+def predict_other_root(x1,y1,x2,y2):
+    dy = lambda distance, m: m*dx(distance,m)
+    dx = lambda distance, m: math.sqrt(distance/(m**2+1))
+    
+    distance = 480**2
+    point_b = (x1+dx(distance,m), y1+dy(distance,m))
+    
+    calc_x = int(point_b[0])
+    calc_y = int(point_b[1])
+    
+    return [[[x2, y1, calc_x, calc_y]]]
+ 
+def check_top_half (bottom, top_list):
+   length = len(top_list)
+    
+   std_x1 = bottom[0][0]
+   std_y1 = bottom[0][1]
+   std_x2 = bottom[0][2]
+   std_y2 = bottom[0][3]
+   circle_x = circle_center[0]
+   circle_y = circle_center[1]
+    
+   # scenario 1: only found original input, can't find the other half
+   if length == 1:
+      
+      x1 = top_list[0][0][0]
+      y1 = top_list[0][0][1]
+      x2 = top_list[0][0][2]
+      y2 = top_list[0][0][3]
+      
+      # option A: line is too far away from center of the circle, then extend to the center
+      if calculate_distance(x1,y1,circle_x,circle_y) > 150: 
+         # print("scenario 1A")
+         return [[[circle_x, circle_y, x2, y2]]]
+      
+      # option B: line is close to center of circle, but too short, extend to length 500
+      # from the bottom point (center of the circle)
+      else:
+         # print("scenario 1B")
+         return predict_other_root(x1,y1,x2,y2)
+      
+      # scenario 2: length of top half is exactly 2, found the other half of DBS lead,
+   elif length >= 2:
+      # then connect the top portion with bottom portion
+      # print("scenario 2")
+      x1 = bottom[0][0]
+      y1 = bottom[0][1]
+      x2 = top_list[0][0][2]
+      y2 = top_list[0][0][3]
+      return [[[x1,y1,x2,y2]]]
+     
+final = check_top_half(bottom_half, other_half)
+print("DBS lead is located at", final, "(x1,y1,x2,y2)")
+      
+final_out_path = output_path + "DBS_leads_" + str(current_subject) +".jpg"
+# draw final DBS_lead
+cv2.line(gray, (final[0][0][0], final[0][0][1]),
+         (final[0][0][2], final[0][0][3]), (255, 0, 0), 3, cv2.LINE_AA)
+cv2.imwrite(final_out_path, gray)
+    
+# ******************************************************************************
+
+# step 4 fill in line pixels between 2 end points
+
+vertical_array = np.asarray(final)
+# vertical_array output is [[x1,y1,x2,y2]]
+x1 = vertical_array[0][0][0]
+y1 = vertical_array[0][0][1]
+x2 = vertical_array[0][0][2]
+y2 = vertical_array[0][0][3]
+
+# equation of a straight line is y = mx + b
+m = (y2 - y1) / (x2 - x1)
+b = y1 - m * x1
+
+image = cv2.imread(input_image)
+# plt.imshow(image)
+
+DBS_lead_out = output_path + "DBS_lead_" + str(current_subject) +".txt"
+line_output = open(DBS_lead_out, 'w')
+
+# function fill_in_pixels 
+def fill_in_pixels (x1,x2):
+    for i in range(x1, x2+1):
+        calc_y = int(m*i + b)
+        coordinate = [i,calc_y]
+        
+        # write output to file
+        line_output.write(str(coordinate))
+        line_output.write('\n')
+        
+        # plot on image, marker size 5, color red
+        # plt.scatter(i,calc_y, s = 5, c = 'r')
+    # plt.show()
+
+fill_in_pixels(x1,x2) 
+
+line_output.close()
+# output file is line_pixels_2.txt
+# this is x-y coordinate of DBS lead
