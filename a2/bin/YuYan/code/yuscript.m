@@ -39,8 +39,9 @@ if size(DBS_3d, 2)> num_sample
     DBS_3d = DBS_3d(:,inx);
 end
 
-DBS_3d = [DBS_3d, pintips_3d];
+DBS_3d_ori = [DBS_3d, pintips_3d];
 DBS_2d = [DBS_2d, pintips_2d];
+
 
 
 % multiple random initial
@@ -55,17 +56,17 @@ number_init = 10;
 best_loss = 9000;
 B_best_rotation = eye(3);
 B_best_translation = [0;0;0];
-best_scaling = 0;
+%best_scaling = 0;
 for i=1:number_init
     % random initialization
     r=[rand,rand,rand]*2*pi;
-    scaling = rand*5;
+    %scaling = rand*5;
     init_t = [rand;rand;rand]*-200;
     center_rot=init_t;
 
     plane_z=-300;
     R=rotationVectorToMatrix(r);
-    DBS_3d = (DBS_3d + init_t)*scaling;
+    DBS_3d = (DBS_3d_ori + init_t);%*scaling;
     DBS_3d=R*(DBS_3d-center_rot)+center_rot;
 
     % visualize
@@ -73,7 +74,7 @@ for i=1:number_init
     plot3(DBS_2d(1,:),DBS_2d(2,:),repmat([plane_z], [1,size(DBS_2d,2) ]),'o')
     hold
     plot3(DBS_3d(1,:),DBS_3d(2,:),DBS_3d(3,:),'x')
-    pause(3)
+    pause(5)
 
     close
     [point_2d_proj] = Project_point(DBS_3d,plane_z);
@@ -92,26 +93,28 @@ for i=1:number_init
     Best_translation = init_t;
 
     % rough search
-    [Best_rotation, Best_translation, new_loss,  DBS_3d, center_rot] = Batch_optimize(Best_rotation,Best_translation, ...
-        new_loss,DBS_2d,DBS_3d,10,center_rot,plane_z,1,10);
+    [Best_rotation, Best_translation, new_loss,  ~, center_rot] = Batch_optimize(Best_rotation,Best_translation, ...
+        new_loss,DBS_2d,DBS_3d,10,center_rot,plane_z,1,5);
     close all
-
-    % detail search
-    [Best_rotation, Best_translation, new_loss,  DBS_3d, center_rot] = Batch_optimize(Best_rotation,Best_translation, ...
-        new_loss,DBS_2d,DBS_3d,1,center_rot,plane_z,3,10);
-    close all
-    
-    %final search
-    [best_r] = RotationSearch(DBS_2d,DBS_3d,0.01,center_rot,plane_z,1, 30);
     
     % update the the best result
     if new_loss < best_loss
         best_loss = new_loss;
         B_best_rotation = Best_rotation;
         B_best_translation = Best_translation;
-        best_scaling = scaling;
+        %best_scaling = scaling;
     end
     
 end
 
 
+
+%final search
+DBS_3d = (DBS_3d_ori + B_best_translation);%*scaling;
+DBS_3d=B_best_rotation*(DBS_3d-B_best_translation)+B_best_translation;
+[B_best_rotation, Best_translation, new_loss,  DBS_3d, center_rot] = Batch_optimize(B_best_rotation,Best_translation, ...
+    new_loss,DBS_2d,DBS_3d,1,center_rot,plane_z,5,1);
+close all
+[B_best_rotation, Best_translation, new_loss,  DBS_3d, center_rot] = Batch_optimize(B_best_rotation,Best_translation, ...
+    new_loss,DBS_2d,DBS_3d,0.1,center_rot,plane_z,5,1);
+close all

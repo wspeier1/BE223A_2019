@@ -46,7 +46,11 @@ DBS_2d = [DBS_2d, pintips_2d];
 % multiple random initial
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % For Henry   
-% 
+% result will be store in B_best_rotation, B_best_translation,
+% best_scaling. These are for 3D object, no other translation or rotation
+% need to be considered.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 number_init = 10;
 best_loss = 9000;
 B_best_rotation = eye(3);
@@ -69,7 +73,7 @@ for i=1:number_init
     plot3(DBS_2d(1,:),DBS_2d(2,:),repmat([plane_z], [1,size(DBS_2d,2) ]),'o')
     hold
     plot3(DBS_3d(1,:),DBS_3d(2,:),DBS_3d(3,:),'x')
-    pause(3)
+    pause(5)
 
     close
     [point_2d_proj] = Project_point(DBS_3d,plane_z);
@@ -97,9 +101,6 @@ for i=1:number_init
         new_loss,DBS_2d,DBS_3d,1,center_rot,plane_z,3,10);
     close all
     
-    %final search
-    [best_r] = RotationSearch(DBS_2d,DBS_3d,0.01,center_rot,plane_z,1, 30);
-    
     % update the the best result
     if new_loss < best_loss
         best_loss = new_loss;
@@ -110,4 +111,8 @@ for i=1:number_init
     
 end
 
+
+
+%final search
+[best_r] = RotationSearch(DBS_2d,DBS_3d,0.01,center_rot,plane_z,1, 10);
 

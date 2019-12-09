@@ -32,7 +32,7 @@ function [Best_rotation, Best_translation, new_loss, point_3d, center_rot] = ...
         hold
         plot(point_2d_proj(1,:), point_2d_proj(2,:),'x')
         %close
-        if old_loss - new_loss <10 && n_iter>min_iter
+        if  n_iter>min_iter
             break
         end
     end
