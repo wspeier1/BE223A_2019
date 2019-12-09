@@ -52,7 +52,7 @@ DBS_2d = [DBS_2d, pintips_2d];
 % need to be considered.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-number_init = 10;
+number_init = 20;
 best_loss = 9000;
 B_best_rotation = eye(3);
 B_best_translation = [0;0;0];
@@ -89,11 +89,8 @@ for i=1:number_init
     [~, ~, ~, old_loss]=optimization(DBS_2d,DBS_3d,plane_z,1000,0.01);
     new_loss = old_loss - 11;
 
-    Best_rotation = R;
-    Best_translation = init_t;
-
     % rough search
-    [Best_rotation, Best_translation, new_loss,  ~, center_rot] = Batch_optimize(Best_rotation,Best_translation, ...
+    [Best_rotation, Best_translation, new_loss,  ~, center_rot] = Batch_optimize(R,init_t, ...
         new_loss,DBS_2d,DBS_3d,10,center_rot,plane_z,1,5);
     close all
     
@@ -116,5 +113,6 @@ DBS_3d=B_best_rotation*(DBS_3d-B_best_translation)+B_best_translation;
     new_loss,DBS_2d,DBS_3d,1,center_rot,plane_z,5,1);
 close all
 [B_best_rotation, Best_translation, new_loss,  DBS_3d, center_rot] = Batch_optimize(B_best_rotation,Best_translation, ...
-    new_loss,DBS_2d,DBS_3d,0.1,center_rot,plane_z,5,1);
+    new_loss,DBS_2d,DBS_3d,0.1,center_rot,plane_z,30,5);
 close all
+% feel free to add more refinement as above based on the output
