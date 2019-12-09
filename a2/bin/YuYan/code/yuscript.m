@@ -20,21 +20,6 @@ pintips_3d=points';
 pintips_2d=importdata('pt_fluoro.txt')';
 pintips_2d = pintips_2d - [512; 640];
 
-
-% random initial
-r=[0,0,pi];
-scaling = 3;
-init_t = [-128;-128;-100];
-center_rot=init_t;
-epsilon=10;
-
-plane_z=-300;
-R=rotationVectorToMatrix(r);
-DBS_3d = (DBS_3d + init_t)*scaling;
-DBS_3d=R*(DBS_3d-center_rot)+center_rot;
-pintips_3d = (pintips_3d + init_t)*scaling;
-pintips_3d=R*(pintips_3d-center_rot)+center_rot;
-
 % sampling for equal comparison 
 if size(DBS_2d, 2)> size(pintips_2d,2)
     inx = randsample(size(DBS_2d, 2),size(pintips_2d,2));
@@ -54,54 +39,79 @@ if size(DBS_3d, 2)> num_sample
     DBS_3d = DBS_3d(:,inx);
 end
 
-
-
-% visualize
-close
-plot3(DBS_2d(1,:),DBS_2d(2,:),repmat([plane_z], [1,size(DBS_2d,2) ]),'o')
-hold
-plot3(DBS_3d(1,:),DBS_3d(2,:),DBS_3d(3,:),'x')
-plot3(pintips_2d(1,:),pintips_2d(2,:),repmat([plane_z], [1,size(pintips_2d,2) ]),'o')
-plot3(pintips_3d(1,:),pintips_3d(2,:),pintips_3d(3,:),'x')
-
-
-close
-[point_2d_proj] = Project_point(DBS_3d,plane_z);
-[point_2d_proj_pin] = Project_point(pintips_3d,plane_z);
-plot(DBS_2d(1,:), DBS_2d(2,:),'o')
-hold
-plot(pinntips_2d(1,:), pintips_2d(2,:),'o')
-plot(point_2d_proj(1,:), point_2d_proj(2,:),'x')
-plot(point_2d_proj_pin(1,:), point_2d_proj_pin(2,:),'x')
-
-close
-
 DBS_3d = [DBS_3d, pintips_3d];
-DBS_2d = [DBS_2ds, pintips_2d];
-
-% initialize
-[~, ~, ~, old_loss]=optimization(DBS_2d,DBS_3d,plane_z,1000,0.01);
-new_loss = old_loss - 11;
+DBS_2d = [DBS_2d, pintips_2d];
 
 
-% keep track of the Translation and Rotation
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% FOR HENRY %
-% Best_rotation and Best_translation is not the final rotation and
-% transformation you also need to consider the preprosessing at the
-% begining including r, init_t and scaling
-Best_rotation = eye(3);
-Best_translation = [0;0;0];
+% multiple random initial
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% For Henry   
+% result will be store in B_best_rotation, B_best_translation,
+% best_scaling. These are for 3D object, no other translation or rotation
+% need to be considered.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% rough search
-[Best_rotation, Best_translation, new_loss, DBS_2d, DBS_3d] = Batch_optimize(Best_rotation,Best_translation, ...
-    new_loss,DBS_2d,DBS_3d,10,center_rot,plane_z,1,10);
-close all
+number_init = 10;
+best_loss = 9000;
+B_best_rotation = eye(3);
+B_best_translation = [0;0;0];
+best_scaling = 0;
+for i=1:number_init
+    % random initialization
+    r=[rand,rand,rand]*2*pi;
+    scaling = rand*5;
+    init_t = [rand;rand;rand]*-200;
+    center_rot=init_t;
 
-% detail search
-[Best_rotation, Best_translation, new_loss, DBS_2d, DBS_3d] = Batch_optimize(Best_rotation,Best_translation, ...
-    new_loss,DBS_2d,DBS_3d,1,center_rot,plane_z,1,10);
-close all
+    plane_z=-300;
+    R=rotationVectorToMatrix(r);
+    DBS_3d = (DBS_3d + init_t)*scaling;
+    DBS_3d=R*(DBS_3d-center_rot)+center_rot;
 
+    % visualize
+    close
+    plot3(DBS_2d(1,:),DBS_2d(2,:),repmat([plane_z], [1,size(DBS_2d,2) ]),'o')
+    hold
+    plot3(DBS_3d(1,:),DBS_3d(2,:),DBS_3d(3,:),'x')
+    pause(3)
+
+    close
+    [point_2d_proj] = Project_point(DBS_3d,plane_z);
+    plot(DBS_2d(1,:), DBS_2d(2,:),'o')
+    hold
+    plot(point_2d_proj(1,:), point_2d_proj(2,:),'x')
+    pause(3)
+    close
+
+
+    % initialize
+    [~, ~, ~, old_loss]=optimization(DBS_2d,DBS_3d,plane_z,1000,0.01);
+    new_loss = old_loss - 11;
+
+    Best_rotation = R;
+    Best_translation = init_t;
+
+    % rough search
+    [Best_rotation, Best_translation, new_loss,  DBS_3d, center_rot] = Batch_optimize(Best_rotation,Best_translation, ...
+        new_loss,DBS_2d,DBS_3d,10,center_rot,plane_z,1,10);
+    close all
+
+    % detail search
+    [Best_rotation, Best_translation, new_loss,  DBS_3d, center_rot] = Batch_optimize(Best_rotation,Best_translation, ...
+        new_loss,DBS_2d,DBS_3d,1,center_rot,plane_z,3,10);
+    close all
+    
+    %final search
+    [best_r] = RotationSearch(DBS_2d,DBS_3d,0.01,center_rot,plane_z,1, 30);
+    
+    % update the the best result
+    if new_loss < best_loss
+        best_loss = new_loss;
+        B_best_rotation = Best_rotation;
+        B_best_translation = Best_translation;
+        best_scaling = scaling;
+    end
+    
+end
 
 
