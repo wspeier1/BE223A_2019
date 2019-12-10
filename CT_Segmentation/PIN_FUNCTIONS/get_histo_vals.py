@@ -2,8 +2,11 @@
 Get histogram of image and output the appropriate high values for metal objects
 
 '''
+import cv2
+from skimage import exposure #histogram equalization
 import numpy as np
 import matplotlib.pyplot as plt
+import pdb
 
 def get_histo_vals(full_data,numbins):
     
@@ -48,8 +51,13 @@ def get_histo_vals(full_data,numbins):
         highest_pixel_value = 999999
     print('lowest value and highest value: ', lowest_pixel_value, highest_pixel_value)
     
+
     
-    return
+    for ii in range(0,nsize[2]):
+        full_data[:,:,ii] = exposure.equalize_hist(full_data[:,:,ii])
+    
+
+    return full_data
     
     
     hist,bins=np.histogram(full_data,numbins)

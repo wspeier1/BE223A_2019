@@ -12,8 +12,11 @@ import scipy.misc
 from scipy import ndimage
 import scipy.io as sio
 from scipy import signal  #for convolution filtering
-#import cv2 as cv2
+import cv2 as cv2
 import pdb                #python debugger, use pdb.set_trace() to stop
+from skimage import exposure #histogram equalization
+
+
 
 from get_dirs import get_dirs
 from get_nii_files import get_nii_files
@@ -50,10 +53,10 @@ def get_pin_locations(input_directory = '/home/kgonzalez/BE223A_2019/data/',
 # =============================================================================
 # Set the options for running over the entire data set and creating images
 # =============================================================================
-    run_all = 1 #set to 1 to go through every code block
-    show_figs = 1
-    write_figs = 1
-
+    run_all = 0 #set to 1 to go through every code block
+    show_figs = 0
+    write_figs = 0
+    hist_eq =0  #flag to use equalized/rescaled values
 
 # =============================================================================
 #  Determine the input folders and output locations
@@ -221,11 +224,7 @@ def get_pin_locations(input_directory = '/home/kgonzalez/BE223A_2019/data/',
         plt.title('Orientation Sample')
 
         
-# =============================================================================
-#       Get the range of most used voxel values in cube
-# =============================================================================
-        #crange = get_histo_vals(data,numbins=200)
-        
+
 # =============================================================================
 #        Remove any NaN values before running over this data          
 # =============================================================================
@@ -245,9 +244,38 @@ def get_pin_locations(input_directory = '/home/kgonzalez/BE223A_2019/data/',
 #  Get range of values in data
 # =============================================================================
         # -- to be updated ---
+        
+        
         #crange = get_metal_contrast(stacked,numbins=200)
 
+# =============================================================================
+#       Get the range of most used voxel values in cube
+# =============================================================================
+        
+        # Contrast stretching
 
+        
+        #pdb.set_trace()
+
+        
+        if (hist_eq == 1): #use histogram eq or rescaling
+            eq_metal = 0.95
+        else:
+            eq_metal = 2300 #for raw values
+
+        if (hist_eq == 1):
+            for ii in range(0,sz):
+                p2, p98 = np.percentile(stacked[:,:,ii], (4, 100))
+                img_rescale = exposure.rescale_intensity(stacked[:,:,ii], in_range=(p2, p98))
+                stacked[:,:,ii] = img_rescale
+        
+            #sample image to test out rescale
+            plt.figure()
+            plt.imshow(stacked[:,:,35],cmap='bone')
+            plt.colorbar()
+            plt.show()
+            
+            
 # =============================================================================
 #  Generate the blank NIFTI array used for final output
 # =============================================================================
@@ -546,6 +574,7 @@ def get_pin_locations(input_directory = '/home/kgonzalez/BE223A_2019/data/',
             new_data_erd = erd_data[:,:,ii] #replace_nan(erd_data[:,:,ii], lowval=-1600)   
             #print('nan replaced')
             #stacked =np.dstack(stacked,new_data)
+            #metal_value = 2300 #works for most cases
             loc_erd = find_metal_mass(new_data_erd,
                                     expanded_hull_dict,
                                     slicenum,
@@ -553,7 +582,7 @@ def get_pin_locations(input_directory = '/home/kgonzalez/BE223A_2019/data/',
                                     dy,
                                     mx,
                                     my,
-                                    metal_value = 2300, 
+                                    metal_value = eq_metal, 
                                     depth=1,
                                     lower_val=0.95,   
                                     upper_val = 15.50,
@@ -673,7 +702,7 @@ def get_pin_locations(input_directory = '/home/kgonzalez/BE223A_2019/data/',
 #dx,dy contains the distances from hull mean to each hull point 
 #mx,my are hull center positions
 #mloc_dict has the metal points for slices with metal protrusions
-        #pdb.set_trace()
+
         
 # =============================================================================
 # Determine quadrants of the image
