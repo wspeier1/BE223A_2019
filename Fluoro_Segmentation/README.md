@@ -1,20 +1,28 @@
-# Fluro Segmentation
+# Fluoro Segmentation
 -- Yadav, Anil
 
 ## Pin Tips Segmentation
 
 ### Usage
 
-	- Note: The algorithm requires initial seed point (x,y) to work. The seed point is the area where pin tips could be potentially found.
+	- Note: The algorithm outputs a csv file with (x,y) coordinates of the localized pins.
 
 To segment the Pin Tips from a given subject, run the following:
 ```
-import pin_tips_extract as ptx #import the class
-path_to_fluro = "subject/fluoro_subject_1.tif" #path to file
-fluro_object = ptx.PinTips(path_to_fluro) #create object (constructor takes the file path as parameter)
+#Run the main.py 
+
+import localize_pins as ptx
+
+#provide path to the root folder that has sub folders of all subjects
+path_to_root = "C:/user/all_subject_data"
+#path to ouput folder
+output = "C:/user/output/"
+
+#create an object
+fluro_object = ptx.PinTips_All(path_to_root, output)
 
 #extract the coordinates (variable will contain a tuple of arrays corresponding to x and y coordinates)
-pin_coord = fluro_object.extract_pin()
+fluro_object.extract_pin()
 ```
 
 ### Packages Used

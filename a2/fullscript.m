@@ -77,15 +77,18 @@ epsilon=0.1;
 plane_z=-100;
 R=rotationVectorToMatrix(r);
 %point_3d_roted=R*(pintips_3d-center_rot)+center_rot;
-point_3d_roted=R*(pintips_3d);
+point_3d_roted=R*(pintips_3d);% you didn't use center of rotation here to perform your rotation, which means that your rotation
+% is centered on origin but not the center of the CT
 
-[best_r] = RotationSearch(subfluoro,pintips_3d,epsilon,center_rot,plane_z,0,10);
+[best_r] = RotationSearch(subfluoro,pintips_3d,epsilon,center_rot,plane_z,0,10);% you didn't use center_rot above but use here
+% and your center of rotation has z>0, which doesn't make sense
+% and here you are comparing your subfluoro which also include skull, but you are comparing only with 3d pintips
 error_degree=acosd(0.5*(trace(R'*rotationVectorToMatrix(best_r))-1));
 
 %%%%%%%%%%%
 %Merge all transformation matrices
 %%%%%%%%%%%
-subct2=rotationVectorToMatrix(best_r)*subct;
+subct2=rotationVectorToMatrix(best_r)*subct;% best_r is coming from pintips_3d
 [theta_x, theta_y, theta_z]=optimization(subfluoro,subct2,plane_z,5000,0.01,1);
 
 best_r(3)=best_r(3)-pi/2;

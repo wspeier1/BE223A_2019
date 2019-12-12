@@ -67,7 +67,7 @@ def downsample_dense_skull(hull_data, slicenum=0):
     alpha = np.sort(alpha) #put them in 0-360 degree order
     
     atol = np.mean(np.diff(np.sort(alpha)))
-    print('mean dtheta  = ',atol)
+    #print('mean dtheta  = ',atol)
     
     atol2 = 0.05 #difference between angle loop and angles found in hull allowed
     
@@ -97,7 +97,7 @@ def downsample_dense_skull(hull_data, slicenum=0):
                 stored.append(jj)
                 counter = counter + 1
     
-    print('Length of stored is ', len(stored))
+    #print('Length of stored is ', len(stored))
     stored=set(stored) #get only unique values
     stored=list(stored)
     

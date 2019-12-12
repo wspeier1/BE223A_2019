@@ -12,8 +12,11 @@ import scipy.misc
 from scipy import ndimage
 import scipy.io as sio
 from scipy import signal  #for convolution filtering
-#import cv2 as cv2
+import cv2 as cv2
 import pdb                #python debugger, use pdb.set_trace() to stop
+from skimage import exposure #histogram equalization
+
+
 
 from get_dirs import get_dirs
 from get_nii_files import get_nii_files
@@ -28,6 +31,8 @@ from find_metal_mass import find_metal_mass
 from get_metal_contrast import get_metal_contrast
 from get_histo_vals import get_histo_vals
 from downsample_dense_skull import downsample_dense_skull
+from get_quadrant import get_quadrant
+from get_tip_point import get_tip_point
 
 def get_pin_locations(input_directory = '/home/kgonzalez/BE223A_2019/data/',
          output_image_base = '/home/kgonzalez/BE223A_2019/CT_Segmentation/PIN_NII',
@@ -51,7 +56,7 @@ def get_pin_locations(input_directory = '/home/kgonzalez/BE223A_2019/data/',
     run_all = 0 #set to 1 to go through every code block
     show_figs = 0
     write_figs = 0
-
+    hist_eq =0  #flag to use equalized/rescaled values
 
 # =============================================================================
 #  Determine the input folders and output locations
@@ -219,11 +224,7 @@ def get_pin_locations(input_directory = '/home/kgonzalez/BE223A_2019/data/',
         plt.title('Orientation Sample')
 
         
-# =============================================================================
-#       Get the range of most used voxel values in cube
-# =============================================================================
-        #crange = get_histo_vals(data,numbins=200)
-        
+
 # =============================================================================
 #        Remove any NaN values before running over this data          
 # =============================================================================
@@ -243,9 +244,38 @@ def get_pin_locations(input_directory = '/home/kgonzalez/BE223A_2019/data/',
 #  Get range of values in data
 # =============================================================================
         # -- to be updated ---
+        
+        
         #crange = get_metal_contrast(stacked,numbins=200)
 
+# =============================================================================
+#       Get the range of most used voxel values in cube
+# =============================================================================
+        
+        # Contrast stretching
 
+        
+        #pdb.set_trace()
+
+        
+        if (hist_eq == 1): #use histogram eq or rescaling
+            eq_metal = 0.95
+        else:
+            eq_metal = 2300 #for raw values
+
+        if (hist_eq == 1):
+            for ii in range(0,sz):
+                p2, p98 = np.percentile(stacked[:,:,ii], (4, 100))
+                img_rescale = exposure.rescale_intensity(stacked[:,:,ii], in_range=(p2, p98))
+                stacked[:,:,ii] = img_rescale
+        
+            #sample image to test out rescale
+            plt.figure()
+            plt.imshow(stacked[:,:,35],cmap='bone')
+            plt.colorbar()
+            plt.show()
+            
+            
 # =============================================================================
 #  Generate the blank NIFTI array used for final output
 # =============================================================================
@@ -544,6 +574,7 @@ def get_pin_locations(input_directory = '/home/kgonzalez/BE223A_2019/data/',
             new_data_erd = erd_data[:,:,ii] #replace_nan(erd_data[:,:,ii], lowval=-1600)   
             #print('nan replaced')
             #stacked =np.dstack(stacked,new_data)
+            #metal_value = 2300 #works for most cases
             loc_erd = find_metal_mass(new_data_erd,
                                     expanded_hull_dict,
                                     slicenum,
@@ -551,7 +582,7 @@ def get_pin_locations(input_directory = '/home/kgonzalez/BE223A_2019/data/',
                                     dy,
                                     mx,
                                     my,
-                                    metal_value = 2300, 
+                                    metal_value = eq_metal, 
                                     depth=1,
                                     lower_val=0.95,   
                                     upper_val = 15.50,
@@ -671,37 +702,52 @@ def get_pin_locations(input_directory = '/home/kgonzalez/BE223A_2019/data/',
 #dx,dy contains the distances from hull mean to each hull point 
 #mx,my are hull center positions
 #mloc_dict has the metal points for slices with metal protrusions
-        pdb.set_trace()
-        closest_pin_index={} #closest pin point index per slice
-        closest_pin_distance ={} #closest pin point distance from center
-        for key in mloc_dict.keys():#this is every slice
-            points = mloc_dict[key] #all the xy metal points in this slice
-            distance_hull = []
-            for counter, npoints in enumerate(points):
-                dx_hull_metal = np.abs(mx[key][0] - npoints[1])
-                dy_hull_metal = np.abs(my[key][0] - npoints[0])
-                distance_hull.append(np.sqrt(np.power(dx_hull_metal,2) + 
-                                         np.power(dy_hull_metal,2)))
-            lowest_distance_index = np.argmin(distance_hull)
-            #for this slice, lowest_distance is the one closest to the center
-            closest_pin_distance[key] = distance_hull[lowest_distance_index]
-            closest_pin_index[key] = lowest_distance_index
-# Now we have all the closest pin values per each slice (as key). Get the 
-#smallest of these and that will be output to the NIFTI file
-        smallest_distance = 99999 #this will be replaced with the dictionary
-        for key in closest_pin_index.keys():
-            test_value = closest_pin_distance[key] 
-            if (test_value < smallest_distance):
-                smallest_index = key
-                smallest_distance = test_value 
-        print('smallest key for closest point is ',smallest_index)
-        #the smallest point can be found with mloc_dict[key] and 
-        #closest_pin_index[key]. This will give the xy point for this slice 
-        #that is closest to the hull center point
-        #mloc_dict[smallest_index][closest_pin_index[smallest_index]]
-        tip_points =  mloc_dict[smallest_index][closest_pin_index[smallest_index]]
-        output_nii_point_only[tip_points[0],tip_points[1],smallest_index] = 1
-        #output_nii single tip xy to NIFTI file
+
+        
+# =============================================================================
+# Determine quadrants of the image
+# - for every slice, get the center of its hull and determine what quadrant 
+#   you're in. This works for PIR orientation, for now
+# =============================================================================
+        lower_hemisphere, upper_hemisphere,lower_marker, upper_marker = \
+            get_quadrant(mloc_dict,mx,my,sz)
+
+
+        lower_tip_points,tip_slice_num= get_tip_point(lower_hemisphere,mx,my, \
+                                                      lower_marker,mloc_dict)
+
+# =============================================================================
+# WRITE LOWER HEMISPHERE OF POINTS TO OUTPUT NIFTI FILE
+# =============================================================================
+        if (0 in tip_slice_num.keys()):
+            output_nii_point_only[lower_tip_points[0][0], \
+                              lower_tip_points[0][1], \
+                              tip_slice_num[0]] = 1
+
+        if (1 in tip_slice_num.keys()):
+            output_nii_point_only[lower_tip_points[1][0], \
+                              lower_tip_points[1][1], \
+                              tip_slice_num[1]] = 1
+        
+        
+        upper_tip_points,tip_slice_num = get_tip_point(upper_hemisphere,mx,my, \
+                                                      upper_marker,mloc_dict)
+        
+# =============================================================================
+# WRITE UPPER HEMISPHERE OF POINTS TO OUTPUT NIFTI FILE
+# =============================================================================
+        if (0 in tip_slice_num.keys()):
+            output_nii_point_only[upper_tip_points[0][0], \
+                                  upper_tip_points[0][1], \
+                                  tip_slice_num[0]] = 1
+
+        if (1 in tip_slice_num.keys()):
+            output_nii_point_only[upper_tip_points[1][0], \
+                                  upper_tip_points[1][1], \
+                                  tip_slice_num[1]] = 1
+
+
+
         print(folder_key[patient_id])
         print(nii_files[folder_key[patient_id]])
         basename = os.path.basename(nii_files[folder_key[patient_id]])
