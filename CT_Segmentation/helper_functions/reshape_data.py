@@ -1,5 +1,6 @@
 import numpy as np
 from typing import Tuple
+import progressbar
 
 def voxels_to_4D(ct_data, is_norm=False) -> np.ndarray:
   """ Reshapes voxel space nifti data to a set of 4D vectors
@@ -17,7 +18,7 @@ def voxels_to_4D(ct_data, is_norm=False) -> np.ndarray:
     i, j, k = np.where(~np.isnan(ct_data))
   long_data = np.empty((len(i), 4), dtype=np.float64)
   q = 0
-  for x, y, z in zip(i,j,k):
+  for x, y, z in progressbar.progressbar(zip(i,j,k)):
       val = ct_data[x, y, z]
       long_data[q, :] = np.array([x, y, z, val])
       q += 1

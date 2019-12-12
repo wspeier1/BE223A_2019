@@ -15,11 +15,13 @@ from typing import Tuple
 import argparse
 import nibabel as nib
 from scipy.spatial import ConvexHull
+import numpy as np
 import helper_functions.visualizations as vis
 import helper_functions.reshape_data as rd
 import helper_functions.filter_CT as fct
 import helper_functions.manipulate_hull as mh
 import matplotlib.pyplot as plt
+import time
 
 def segment_skull(
     ct: str,
@@ -27,6 +29,7 @@ def segment_skull(
     output_dir: str,
     subject: str,
     preview: bool,
+    chunk_size: int = 500,
     save: bool = True
   ) -> Tuple:
     """ Segment out skull
@@ -43,6 +46,8 @@ def segment_skull(
     Returns:
         Tuple(nib.nifti1, nib.nifti1) -- 2 nibabel nifti1 objects containing: skull vertices, full dense skull
     """
+    
+    start = time.time()
     print('\nLOADING CT')
     # Load Preop_CT
     preop_CT = nib.load(ct)
@@ -66,12 +71,13 @@ def segment_skull(
     scaled = mh.scale_hull(hull_idx, 1.1)
     scaled_hull = ConvexHull(scaled[:,:3])
 
+
     print('\nFILTERING CT FOR REGIONS OUTSIDE ORIGINAL HULL')
     # Filter long CT Data for data within hull
-    hull_filt_in = fct.filter_in_hull(long_data, hull_hull, filt_out=False)
+    hull_filt_in = fct.filter_in_hull(long_data, hull_hull, filt_out=False, chunk_size=chunk_size)
 
     print('\nFILTERING CT FOR REGIONS INSIDE SCALED HULL')
-    hull_filt_both = fct.filter_in_hull(hull_filt_in, scaled_hull, filt_out=True)
+    hull_filt_both = fct.filter_in_hull(hull_filt_in, scaled_hull, filt_out=True, chunk_size=chunk_size)
 
     voxel_rem_both = rd.long_to_voxels(hull_filt_both, preop_CT_data.shape)
 
@@ -79,7 +85,7 @@ def segment_skull(
     skull_vertices, full_skull = fct.get_skull_vertices(
         voxel_rem_both,
         preop_CT_data.shape,
-        thresh=0.6,
+        thresh=0,
         sigma=1
     )
 
@@ -118,7 +124,8 @@ def segment_skull(
     dense_skull_features = nib.nifti1.Nifti1Image(full_skull_voxel, preop_CT.affine, header=preop_CT.header)
     if save:
       nib.nifti1.save(dense_skull_features, dense_file_name)
-
+    end = time.time()
+    print('Time elapsed (minutes): ', (end - start) / 60)
     return feature_CT, dense_skull_features
 
 if __name__ == '__main__':

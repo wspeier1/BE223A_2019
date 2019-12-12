@@ -59,7 +59,7 @@ def load_hull_voxel_matrix(
 
 def isInHull(coords, convex_hull: ConvexHull):
     '''
-    Datermine if the list of points P lies inside the hull
+    Determine if the list of points P lies inside the hull
     :return: list
     List of boolean where true means that the point is inside the convex hull
     Taken from stack overflow user Cunningham in their answer:
@@ -104,9 +104,15 @@ def check_in_hull_parallel(
   #print(inputs)
   results = []
   print('...Computing if chunks in Hull')
-  with mp.Pool() as pool:
-    results = pool.starmap(isInHull, inputs)
-  print('\tDone')
+  for pts in progressbar.progressbar(splitted):
+    results.append(isInHull(pts, convex_hull))
+
+  # Below code runs in parallel, currently going to run sequentially due to
+  #   Issues with running starmap on windows machine
+
+  #with mp.Pool() as pool:
+    #results = pool.starmap(isInHull, inputs)
+  #print('\tDone')
 
   return np.concatenate(results)
 

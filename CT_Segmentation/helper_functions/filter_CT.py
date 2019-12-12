@@ -67,6 +67,12 @@ def min_max_normalize(data, scale=1):
   """
   min_val = np.nan_to_num(data).min()
   nan_fill = np.nan_to_num(data, nan=min_val)
+  max_val = nan_fill.max()
+  
+  if max_val > 4000:
+    print('Setting points > 3500 to 3500')
+    nan_fill[nan_fill > 3500] = 3500
+
   print('Normalizing from:', nan_fill.min(), nan_fill.max())
   pos_val = nan_fill - nan_fill.min()
   norm = scale * pos_val / pos_val.max()
@@ -79,7 +85,7 @@ def isolate_pin_tips(
     threshold: float,
     hough_radii: List[float],
   ):
-  """ filters for just pin tips set to 1 from ct_data
+  """ **UNUSED FUNCTION** filters for just pin tips set to 1 from ct_data
 
   Function takes ct data, normalizes it from 0 to 1, and
   iterates through each slice on the first axis of the data.
@@ -120,7 +126,7 @@ def isolate_pin_tips(
 
   return pin_tip_matrix
 
-def filter_in_hull(long_data: np.ndarray, hull: ConvexHull, filt_out: bool = False):
+def filter_in_hull(long_data: np.ndarray, hull: ConvexHull, filt_out: bool = False, chunk_size: int = 500):
   """ Removes data points within a specified convexHull
   
   Arguments:
@@ -137,7 +143,7 @@ def filter_in_hull(long_data: np.ndarray, hull: ConvexHull, filt_out: bool = Fal
   if long_data.shape[1] != 4:
     raise ValueError('Data must be of shape Nx4, found: ' + str(long_data.shape))
   coords = long_data[:,:3]
-  is_in_hull = mh.check_in_hull_parallel(coords, hull, 500)
+  is_in_hull = mh.check_in_hull_parallel(coords, hull, chunk_size=chunk_size)
   if filt_out:
     return long_data[is_in_hull]
   else:
@@ -191,7 +197,7 @@ def remove_lower_regions(long_data, shape, init_point=160, end_point=200):
 def get_skull_vertices(
     filt_ct_data: np.ndarray,
     ct_shape: Tuple,
-    thresh: float = 0.6,
+    thresh: float = 0,
     sigma: float = 1.0,
   ) -> Tuple:
   """ Returns vertices of convex hull from isolated
@@ -202,7 +208,7 @@ def get_skull_vertices(
   
   Keyword Arguments:
       thresh {float} --  Threshold on gaussian filtered data 
-        range [0 to 1](default: {0.6})
+        range [-9 to 9](default: {0})
       sigma {float} --  gaussian filter standard deviation (default: {1.0})
   
   Raises:
@@ -214,11 +220,9 @@ def get_skull_vertices(
   """
 
   g_filt = ndimage.gaussian_laplace(filt_ct_data, sigma=sigma)
-  mmax = min_max_normalize(g_filt)
-
   norm = g_filt.copy()
-  norm[np.where(mmax < thresh)] = 1
-  norm[np.where(mmax >= thresh)] = 0
+  norm[np.where(g_filt < thresh)] = 1
+  norm[np.where(g_filt >= thresh)] = 0
 
   full_skull = rd.voxels_to_4D(norm, is_norm=True)
 
@@ -255,3 +259,6 @@ def get_largest_connected_components(
   # Return largest connected component
   binary_img = mask[label_im]
   return binary_img.astype(float)
+
+def threshold_long(long_data: np.ndarray, threshold: float):
+    return long_data[np.where(long_data[:,3] > threshold)]
