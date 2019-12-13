@@ -121,6 +121,7 @@ def electrode_detection(input_path, output_path):
     lst = list(zip(cy,cx))
     lst = filterRange(lst, 400, 800, 120,480)
     np.save(output_path, lst)
+    return lst
 # In[9]:
 
 
