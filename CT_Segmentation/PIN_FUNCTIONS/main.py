@@ -600,7 +600,7 @@ def get_pin_locations(input_directory = '/home/kgonzalez/BE223A_2019/data/',
             #output of find_metal_mass is row, col, slice#
         
         
-            print('loc_erd shape @ slice is ',np.shape(loc_erd),ii)
+            #print('loc_erd shape @ slice is ',np.shape(loc_erd),ii)
             if (len(loc_erd) ==0):
                 #this is an empty list, due to not having any metallic signatures
                 continue  #jump to the next slice
