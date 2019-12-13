@@ -61,16 +61,16 @@ def get_pin_locations(input_directory = '/home/kgonzalez/BE223A_2019/data/',
 # =============================================================================
 #  Determine the input folders and output locations
 # =============================================================================
-    input_directory = input('Enter full path to folder of data directories: ')
-    if len(input_directory) == 0 :
-        input_directory = '/home/kgonzalez/BE223A_2019/data/'
+    #input_directory = input('Enter full path to folder of data directories: ')
+    #if len(input_directory) == 0 :
+        #input_directory = '/home/kgonzalez/BE223A_2019/data/'
         
-    print('User input directory is set to: ', input_directory)
+    #print('User input directory is set to: ', input_directory)
 
-    output_image_base = input('Enter the output folder for each patient case: ')
-    if (len(output_image_base) == 0):
-        output_image_base = '/home/kgonzalez/BE223A_2019/CT_Segmentation/PIN_NII'
-    print('Output top level directory is: ', output_image_base)
+    #output_image_base = input('Enter the output folder for each patient case: ')
+    #if (len(output_image_base) == 0):
+        #output_image_base = '/home/kgonzalez/BE223A_2019/CT_Segmentation/PIN_NII'
+    #print('Output top level directory is: ', output_image_base)
 
 
 
@@ -91,6 +91,8 @@ def get_pin_locations(input_directory = '/home/kgonzalez/BE223A_2019/data/',
 
     for ii in range(0,len(sub_dirs)):
         print(sub_dirs[ii])
+        if sub_dirs[ii][0] == '.':
+            continue
 
         current_path = os.path.join(main_directory,sub_dirs[ii])
         file_list = os.listdir(current_path)

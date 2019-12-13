@@ -117,7 +117,7 @@ def segment_skull(
     print('\n CREATING INTERMEDIARY FOR PIN TIP SEGMENTATION')
     full_skull_voxel = rd.long_to_voxels(full_skull, preop_CT_data.shape)
     dense_file_name = os.path.join(
-        output_dir,
+        os.path.dirname(ct),
         subject + '_dense_skull.nii'
     )
     print('\n\tSAVING DENSE SKULL INTERMEDIARY OUTPUT TO:', dense_file_name)
