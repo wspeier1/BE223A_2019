@@ -3,6 +3,9 @@ import nibabel as nib
 import h5py
 import os
 from scipy.signal import convolve2d
+from mpl_toolkits.mplot3d import Axes3D
+
+from CT_Projection.VirtualCamera.MatrixOp import *
 
 import time
 from PIL import Image
