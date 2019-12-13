@@ -234,7 +234,7 @@ def predict_other_root(x1,y1,x2,y2):
    calc_x = int(point_b[0])
    calc_y = int(point_b[1])
     
-   return [[[x2, y1, calc_x, calc_y]]]
+   return [[[x1, y1, calc_x, calc_y]]]
  
 def check_top_half (bottom, top_list, circle_center):
    length = len(top_list)
