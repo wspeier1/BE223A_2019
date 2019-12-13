@@ -5,9 +5,10 @@ import os
 from scipy.signal import convolve2d
 
 import time
-from VirtualCamera.MatrixOp import *
 from PIL import Image
 import PIL.ImageOps
+
+from CT_Projection.VirtualCamera.MatrixOp import *
 
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import axes3d, Axes3D
