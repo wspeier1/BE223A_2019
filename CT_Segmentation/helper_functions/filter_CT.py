@@ -253,7 +253,11 @@ def get_largest_connected_components(
   sizes = ndimage.sum(ct_data, label_im, range(nb_labels + 1))
 
   # Get largest
-  n_largest = sizes[(-sizes).argsort()[num_comp-1]]
+  if len(sizes) == 1:
+    n_largest = sizes[0]
+  else:
+    n_largest = sizes[(-sizes).argsort()[num_comp-1]]
+
   mask = sizes >= n_largest
 
   # Return largest connected component
