@@ -254,6 +254,7 @@ def get_largest_connected_components(
 
   # Get largest
   if len(sizes) == 1:
+    print('NO/FEW DBS LEADS FOUND')
     n_largest = sizes[0]
   else:
     n_largest = sizes[(-sizes).argsort()[num_comp-1]]
