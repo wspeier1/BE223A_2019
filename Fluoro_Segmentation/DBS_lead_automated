@@ -6,9 +6,21 @@ import numpy as np
 import matplotlib.pyplot as plt
 import math
 
-input_images = ["/Users/Jenny/beta testing/DBS_bG06/DBS_bG06.tif",
-                "/Users/Jenny/beta testing/DBS_bG12/DBS_bG12.tif",
-                "/Users/Jenny/beta testing/fluoro_subject_3/fluoro_subject_3.tif"]
+input_images = ["/Users/Jenny/final testing/fluoro_subject_1c/fluoro_subject_1c.tif",
+                "/Users/Jenny/final testing/fluoro_subject_2/fluoro_subject_2.tif",
+                "/Users/Jenny/final testing/fluoro_subject_3/fluoro_subject_3.tif",
+                "/Users/Jenny/final testing/fluoro_subject_4/fluoro_subject_4.tif",
+                "/Users/Jenny/final testing/fluoro_subject_5/fluoro_subject_5.tif",
+                "/Users/Jenny/final testing/DBS_bG02/DBS_bG02.tif",
+                "/Users/Jenny/final testing/DBS_bG03/DBS_bG03.tif",
+                "/Users/Jenny/final testing/DBS_bG06/DBS_bG06.tif",
+                "/Users/Jenny/final testing/DBS_bG09/DBS_bG09.tif",
+                "/Users/Jenny/final testing/DBS_bG10/DBS_bG10.tif",
+                "/Users/Jenny/final testing/DBS_bG12/DBS_bG12.tif",
+                "/Users/Jenny/final testing/DBS_bG13/DBS_bG13.tif",
+                "/Users/Jenny/final testing/DBS_bG17/DBS_bG17.tif",
+                "/Users/Jenny/final testing/DBS_bG18/DBS_bG18.tif",
+                "/Users/Jenny/final testing/DBS_bG19/DBS_bG19.tif"]
 
 # input is a list of input images, each element is a filepath
 def fluoro_DBS (tif_images):
@@ -27,7 +39,7 @@ def fluoro_DBS (tif_images):
       
       # step 3 find two halves of DBS lead
       final_points = check_top_half(DBS_lead, other_half, center_of_frame)
-      # print("in fluoro, DBS lead is located at", final_points, "(x1,y1,x2,y2)")
+      print("in fluoro, DBS lead is located at", final_points, "(x1,y1,x2,y2)")
       
       # step 4 connect them & output
       draw_lead_on_image(final_points,input_image, output_path)
@@ -285,13 +297,14 @@ def fill_in_pixels (x1,x2,y1,y2,output_path):
    m = (y2 - y1) / (x2 - x1)
    b = y1 - m * x1   
    
-   for i in range(x1, x2+1):
+   for i in range(int(x1), int(x2+1)):
       calc_y = int(m*i + b)
       coordinate = [i,calc_y]
       
       # write output to file
       line_output.write(str(coordinate))
       line_output.write('\n')
+      
    line_output.close()
 
 fluoro_DBS(input_images)
