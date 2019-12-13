@@ -8,18 +8,18 @@ import math
 
 # only two parameters need to be changed:
 # 1. input file path
-input_image = "/Users/Jenny/beta testing/fluoro_subject_3.tif"
+input_image = "/Users/Jenny/beta testing/DBS_bG06.tif"
 
 # 2. output file path folder
 output_path = "/Users/Jenny/beta testing/"
-# output is one text file containing (x, y) coordinates of DBS lead as a straight line
-# second output is DBS lead drawn as a white line on original input image, (.jpg)
+# output is a text file containing (x, y) coordinates of DBS lead as a straight line
 
 # ******************************************************************************
 # step 1 find frame, terminal end of DBS lead is always near the center of
 # this circular frame
   
 # Read image. 
+original = cv2.imread(input_image,cv2.IMREAD_COLOR)
 img_c = cv2.imread(input_image, cv2.IMREAD_COLOR) 
   
 # Convert to grayscale. 
@@ -60,17 +60,6 @@ def subject_num (filepath):
       return last_two
 
 current_subject = subject_num(input_image)
-
-# save this detected_circles, output as a text file
-# circle_out_path = output_path + "all_circles_" + str(current_subject) +".txt"
-circle_pic = "/Users/Jenny/beta testing/detected circles " + str(current_subject) + ".tif"
-# output = open(circle_out_path,'w')
-# output.write("total number of circles found: ")
-# output.write(str(num_circles))
-# output.write('\n')
-# output.write('each row contains: x, y ,radius\n')
-# output.writelines(str(detected_circles))
-# output.close()
 
 # function circles_in_frame accepts 1 parameter, a numpy array (input_array), 
 # output is a filtered numpy array where centers points are restricted to
@@ -121,17 +110,13 @@ list_of_circles = filter_circles_in_frame(detected_circles)
 # list_of_centers is a list
 # return the first of the list because it has the largest accumulator value
 center_of_frame = detected_circles[0][0]
+# x coordinate, y coordinate, and radius of center of the circle
 
-# center_of_frame outputs [687.5 441.5 137.8] for subject_1c.tif, 
-# which is x coordinate, y coordinate, and radius of center of the circle
-
-# print("total number of circles found: ", num_circles)
-# print("frame is located at: (x,y,radius)", center_of_frame)
 
 # ******************************************************************************
 # step 2 line detection
 # out of all straight lines detected, 2 additional parameters are used to
-# narrow down DBS lead: first vertical line of slope >= 2.5; second
+# narrow down DBS lead: first vertical line of slope >= 1.5; second
 # end point is near the center of the fram
 
 img_l = cv2.imread(input_image) 
@@ -139,19 +124,13 @@ img_l = cv2.imread(input_image)
 # Convert the img_l to grayscale 
 gray = cv2.cvtColor(img_l,cv2.COLOR_BGR2GRAY) 
   
-# Apply edge detection method on the image 
+# Apply edge detection method on the image, output binary image
 edges = cv2.Canny(gray,80,150,apertureSize = 3) 
-# cv2.imwrite("/Users/Jenny/edges-80-150.jpg",edges)
-# edges is a numpy.ndarray of original image size, (mask)
+# edges is a numpy.ndarray of original image size
 
 lines = cv2.HoughLinesP(edges, 1, np.pi/180, 50, maxLineGap=50)
 
 lines_out_path = output_path + "lines_" + str(current_subject) +".jpg"
-
-# for line in lines:
-#    x1, y1, x2, y2 = line[0]
-#    cv2.line(img_l, (x1, y1), (x2, y2), (0, 0, 128), 2)
-# cv2.imwrite(lines_out_path, img_l)
 
 # filter 1/4: find only vertical lines
 vertical_lines = []
@@ -189,12 +168,6 @@ vertical_long_lines = list(filter(lambda x: length(x)>=50, vertical_lines))
 # print("total number of long vertical lines found ", len(vertical_long_lines))
 
 vertical_array = np.asarray(vertical_long_lines)
-
-# a,b,c = vertical_array.shape
-# for i in range (a):
-#     cv2.line(gray, (vertical_array[i][0][0], vertical_array [i][0][1]),
-#             (vertical_array[i][0][2], vertical_array[i][0][3]), (0, 0, 255), 3, cv2.LINE_AA)
-#     cv2.imwrite("/Users/Jenny/long_vertical_lines.jpg", gray)
             
 # filter 3/4: find point closeset to center of circle
 # receive center point of circle from circle-finding detection
@@ -265,19 +238,15 @@ def on_same_line (half_DBS, all_lines):
         # if this line is highly similar to standard, eliminate this
         # because it's the same segment
         if not ((abs (x1-std_x1)) < 17 and (abs (x2-std_x2)) < 17 and
-        (abs (y1-std_y1)) < 17 and (abs (x2-std_x2)) < 17):
-            
-            # equation of a straight line is y = mx + b
-            m = (y2 - y1) / (x2 - x1)
-            b = y1 - m * x1
-            diff_in_slope = abs(m - DBS_slope)
-            diff_in_int = abs(b - DBS_y_int)
-            
-            # if vertical line is similar to bottom half of DBS lead, 
-            # accept this to likely to be top half of DBS lead
-            if diff_in_slope <= 0.50 and diff_in_int <= 1050:
-                # append to list
-                top_half.append(line)
+        (abs (y1-std_y1)) < 17 and (abs (x2-std_x2)) < 17):     
+           
+           # given x1, and x2, predict y1, and y2 on the same line
+           calc_y1 = DBS_slope * x1 + DBS_y_int
+           calc_y2 = DBS_slope * x2 + DBS_y_int
+           
+           # if given line is close to predicted line, then append this to list
+           if ((abs (calc_y1 - y1)) <= 20) and ((abs (calc_y2 - y2)) <= 20):
+              top_half.append(line)
             
     return np.asarray(top_half)
 
@@ -294,14 +263,8 @@ other_half = on_same_line(bottom_half, vertical_long_lines)
 # A. if line is too far away from center of circle, then just extend to the center of the circle
 # B. if line is too short, (only found the bottom half), then extend to certain length
 
-# scenario 2: length of top half is exactly 2, then found the top portion of DBS lead, simply connect
+# scenario 2: length of top half is more than 2, then found the top portion of DBS lead, simply connect
 # this top portion with bottom portion
-
-# scenario 3:length of top_half is >2, then more than one similar slope lines were found, need to filter to
-# line with furthest point only
-# if (len(other_half)) > 2:
-#     top_half = furthest_line(other_half)
-#     return top_half 
 
 # equation of a straight line is y = mx + b
 m = (y2 - y1) / (x2 - x1)
@@ -339,33 +302,36 @@ def check_top_half (bottom, top_list):
       
       # option A: line is too far away from center of the circle, then extend to the center
       if calculate_distance(x1,y1,circle_x,circle_y) > 150: 
-         # print("scenario 1A")
          return [[[circle_x, circle_y, x2, y2]]]
       
-      # option B: line is close to center of circle, but too short, extend to length 500
+      # option B: line is close to center of circle, but too short, extend to length 480
       # from the bottom point (center of the circle)
       else:
-         # print("scenario 1B")
          return predict_other_root(x1,y1,x2,y2)
       
-      # scenario 2: length of top half is exactly 2, found the other half of DBS lead,
+   # scenario 2: length of top half bigger 2, found the other half of DBS lead,
    elif length >= 2:
       # then connect the top portion with bottom portion
-      # print("scenario 2")
       x1 = bottom[0][0]
       y1 = bottom[0][1]
       x2 = top_list[0][0][2]
       y2 = top_list[0][0][3]
       return [[[x1,y1,x2,y2]]]
+   
+   # scenario 3: length of top half is 0, couldn't find the other half of DBS lead,
+   elif length == 0:
+      # then extend the bottom half toward the skull, until length is 480
+      return predict_other_root(std_x1,std_y1,std_x2,std_y2)   
+   
      
 final = check_top_half(bottom_half, other_half)
-print("DBS lead is located at", final, "(x1,y1,x2,y2)")
+print("DBS lead in fluoro is located at", final, "(x1,y1,x2,y2)")
       
 final_out_path = output_path + "DBS_leads_" + str(current_subject) +".jpg"
 # draw final DBS_lead
-cv2.line(gray, (final[0][0][0], final[0][0][1]),
-         (final[0][0][2], final[0][0][3]), (255, 0, 0), 3, cv2.LINE_AA)
-cv2.imwrite(final_out_path, gray)
+cv2.line(original, (final[0][0][0], final[0][0][1]),
+         (final[0][0][2], final[0][0][3]), (0, 0, 255), 3, cv2.LINE_AA)
+cv2.imwrite(final_out_path, original)
     
 # ******************************************************************************
 
@@ -383,7 +349,6 @@ m = (y2 - y1) / (x2 - x1)
 b = y1 - m * x1
 
 image = cv2.imread(input_image)
-# plt.imshow(image)
 
 DBS_lead_out = output_path + "DBS_lead_" + str(current_subject) +".txt"
 line_output = open(DBS_lead_out, 'w')
