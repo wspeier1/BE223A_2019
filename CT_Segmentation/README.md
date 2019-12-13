@@ -1,9 +1,8 @@
 
 # CT Segmentation section
--- Keane and Samir
 
 ## Skull and DBS Segmentation
-
+_Author: Samir Akre - Updated 12/13/2019_
 ### Directory Structure
 - __segment_skull.py__: script that ties together pipeline to segment skull out of CT and save as nifti file
 - __segment_DBS.py__: script that ties together pipeline to segment dbs out of postop CT and save as nifti file
