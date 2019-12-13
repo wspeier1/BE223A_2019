@@ -53,7 +53,8 @@ def get_pin_locations(input_directory = '/home/kgonzalez/BE223A_2019/data/',
 # =============================================================================
 # Set the options for running over the entire data set and creating images
 # =============================================================================
-    run_all = 0 #set to 1 to go through every code block
+    run_all = 1 #set to 1 to go through every code block. If set to 0, it will
+                #ask the user to input the patient id from a list it generates
     show_figs = 0
     write_figs = 0
     hist_eq =0  #flag to use equalized/rescaled values
@@ -599,7 +600,7 @@ def get_pin_locations(input_directory = '/home/kgonzalez/BE223A_2019/data/',
             #output of find_metal_mass is row, col, slice#
         
         
-            print('loc_erd shape @ slice is ',np.shape(loc_erd),ii)
+            #print('loc_erd shape @ slice is ',np.shape(loc_erd),ii)
             if (len(loc_erd) ==0):
                 #this is an empty list, due to not having any metallic signatures
                 continue  #jump to the next slice

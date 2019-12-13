@@ -49,7 +49,7 @@ def get_tip_point(hemisphere_dict,mx,my, slice_marker,mloc_dict):
             print('No points found in this hemi')
             continue #skip over this one
         for counter,npoints in enumerate(combined_dict[key]):
-            print('counter=',counter)
+            #print('counter=',counter)
             slice_number = combined_slice_dict[key][counter]
             dx_hull_metal = np.abs(mx[slice_number][0] - npoints[1])
             dy_hull_metal = np.abs(my[slice_number][0] - npoints[0])
