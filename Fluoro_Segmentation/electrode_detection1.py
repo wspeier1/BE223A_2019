@@ -18,12 +18,12 @@ from skimage.util import img_as_ubyte
 from skimage import feature
 from scipy import ndimage as ndi 
 
-from circle_mask import circleMask, preprocess_exterior
-import myfunctions 
+from Fluoro_segmentation.circle_mask import circleMask, preprocess_exterior
+from Fluoro_segmentation import myfunctions 
 #import validate
-import linear_regression
-import find_spectral_clusters
-import cluster_helper
+from Fluoro_segmentation import linear_regression
+from Fluoro_segmentation import find_spectral_clusters
+from Fluoro_segmentation import cluster_helper
 
 # electrode_detection will take in 2 inputs of raw image's path and 
 # return a list of central points for electrodes. 
@@ -96,7 +96,19 @@ def electrode_detection(input_path, output_path):
 	#print("shape of img ", img.shape)
 	#preprocess img to remove patient information 
 	img = preprocess_exterior(img)
-	return electrode_detection1_helper(img, output_path)
+	
+	good_cluster = electrode_detection1_helper(img, output_path)
+	
+	implot = plt.imshow(img)
+	# put a blue dot at (10, 20)
+	plt.scatter([10], [20])
+	# put a red dot, size 40, at 2 locations:
+	plt.scatter(good_cluster[:,1], good_cluster[:,0], c='r', s=30)
+	plt.show()
+	
+	return good_cluster
+	
+	
 	#return electrode_detection2_helper(img, output_path)
 	#return electrode_detection3_helper(img, output_path)
 	

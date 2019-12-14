@@ -22,6 +22,26 @@ degree = 1
 cluster_1_color = 'blue'
 # cluster_2_color = 'red'
 
+# plot points & draw line
+def draw_electrodes(cluster_1, slope_1, intercept_1, processed):
+	image = processed
+	#plt.imshow(image)
+	plt.plot(image)
+
+	for point in cluster_1:
+		y1 = point[0]
+		x1 = point[1]
+		plt.scatter(x1, y1, s = 5, c = cluster_1_color)
+		
+	x_array = np.arange(0,1200,1)
+	plot_y_1 = slope_1*(x_array) + intercept_1
+	plt.plot(x_array, plot_y_1, cluster_1_color)
+	"""
+	plt.xlim(0,1280)
+	plt.ylim(1024,0)
+	"""
+	plt.show()
+	
 
 #slope_1, intercept_1, r_value_1, p_value_1, std_err_1 = scipy.stats.linregress(x1, y1)
 #r_squared_1 = r_value_1**2
@@ -40,39 +60,6 @@ def linear_regression(input_cluster, image):
 	#draw_electrodes(input_cluster, slope_1, intercept_1, image) # <<<----------- comment out this line if you don't want the plot
 	return slope_1, intercept_1, r_squared_1
 
-#this selects the best cluster out of all the cluster using regression
-def select_cluster(clusters, image):
-	max_rsquared = 0 
-	best_cluster = []
-	best_slope = 0
-	best_intercept = 0
-	for cluster in clusters:
-		slope, intercept, r_squared = linear_regression(cluster, image)
-		#filter this cluster out
-		if (len(cluster) > 3):
-			print("r_squared : ", r_squared)
-			if r_squared > max_rsquared:
-				best_cluster = cluster
-				max_rsquared = r_squared 
-				best_slope = slope
-				best_intercept = intercept
-	draw_electrodes(best_cluster, slope, intercept, image)
-	return best_cluster, best_slope, best_intercept, max_rsquared  
-
-# plot points & draw line
-def draw_electrodes(cluster_1, slope_1, intercept_1, image_file_path):
-    image = np.load(image_file_path)
-    plt.imshow(image)
-    for point in cluster_1:
-        y1 = point[0]
-        x1 = point[1]
-        plt.scatter(x1, y1, s = 5, c = cluster_1_color)
-        
-    x_array = np.arange(0,1200,1)
-    plot_y_1 = slope_1*(x_array) + intercept_1
-    plt.plot(x_array, plot_y_1, cluster_1_color)
-    plt.show()
-	
 #line is given in (a,b,c) where ax+by+c= 0
 def mindist_pt_to_line(pt , line):
     (x0, y0) = pt
@@ -96,3 +83,23 @@ def remove_far_points_from_line(lst, line ,d ):
 			filter.append(pts)
 	filter = np.array(filter)
 	return filter
+
+
+#this selects the best cluster out of all the cluster using regression
+def select_cluster(clusters, image):
+	max_rsquared = 0 
+	best_cluster = []
+	best_slope = 0
+	best_intercept = 0
+	for cluster in clusters:
+		slope, intercept, r_squared = linear_regression(cluster, image)
+		#filter this cluster out
+		if (len(cluster) > 3):
+			print("r_squared : ", r_squared)
+			if r_squared > max_rsquared:
+				best_cluster = cluster
+				max_rsquared = r_squared 
+				best_slope = slope
+				best_intercept = intercept
+	#draw_electrodes(best_cluster, best_slope, best_intercept, image)
+	return best_cluster, best_slope, best_intercept, max_rsquared  
