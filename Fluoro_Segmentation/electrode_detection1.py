@@ -56,7 +56,7 @@ def electrode_detection1_helper( processed, output_path,
 	
     # Select the most prominent 30 circles
     # worked with most of the patients (attempt1)
-	accums, cx, cy, radii = hough_circle_peaks(hough_res, hough_radii, total_num_peaks=30)
+	accums, cx, cy, radii = hough_circle_peaks(hough_res, hough_radii, total_num_peaks=45)
 	
     # Select the most prominent 60 circles, did not improve much!
     # worked with most of the patients (attempt2),
