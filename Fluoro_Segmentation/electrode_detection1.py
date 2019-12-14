@@ -18,12 +18,12 @@ from skimage.util import img_as_ubyte
 from skimage import feature
 from scipy import ndimage as ndi 
 
-from Fluoro_segmentation.circle_mask import circleMask, preprocess_exterior
-from Fluoro_segmentation import myfunctions 
+from Fluoro_Segmentation.circle_mask import circleMask, preprocess_exterior
+from Fluoro_Segmentation import myfunctions 
 #import validate
-from Fluoro_segmentation import linear_regression
-from Fluoro_segmentation import find_spectral_clusters
-from Fluoro_segmentation import cluster_helper
+from Fluoro_Segmentation import linear_regression
+from Fluoro_Segmentation import find_spectral_clusters
+from Fluoro_Segmentation import cluster_helper
 
 # electrode_detection will take in 2 inputs of raw image's path and 
 # return a list of central points for electrodes. 
