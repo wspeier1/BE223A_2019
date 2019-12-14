@@ -6,6 +6,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import math
 
+# input needs to be a list of of filepaths, output will save to the according folder
 input_images = ["/Users/Jenny/final testing/fluoro_subject_1c/fluoro_subject_1c.tif",
                 "/Users/Jenny/final testing/fluoro_subject_2/fluoro_subject_2.tif",
                 "/Users/Jenny/final testing/fluoro_subject_3/fluoro_subject_3.tif",
