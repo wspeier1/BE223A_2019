@@ -1,3 +1,14 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% This is a sample code for aligning the CT and fluoroscopy features.
+% Since we don't have prior knowledge on the rotation and translation, I use multiple random initialization.
+% But it will be easy to adjust this part after we get the prior knowledge. 
+% Here I use our own coordinate system where origin is the point source and reception plane we defined it as a 
+% plane that perpendicular to z-axis and have a fixed distance to origin, which we defined as planez.
+% Here I doesn't include the trasformartion for the translation and rotation back to the original coordinate system.
+%
+% Yu Yan 
+% 2019/12/14
+
 % DBS
 % CT
 DBS_CT = niftiread("subject_4_DBS.nii");
