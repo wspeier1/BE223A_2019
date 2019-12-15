@@ -1,25 +1,25 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % This is a sample code for aligning the CT and fluoroscopy features.
-% Since we don't have prior knowledge on the rotation and translation, I use multiple random initialization.
+% Since we don't have prior knowledge on the rotation and translation, I use multiple random initialization here.
 % But it will be easy to adjust this part after we get the prior knowledge. 
-% Here I use our own coordinate system where origin is the point source and reception plane we defined it as a 
-% plane that perpendicular to z-axis and have a fixed distance to origin, which we defined as planez.
-% Here I doesn't include the trasformartion for the translation and rotation back to the original coordinate system.
+% Here we use our own coordinate system where origin is the point source and reception plane we defined it as a 
+% plane that perpendicular to z-axis and have a fixed distance to origin.
 %
 % Yu Yan 
 % 2019/12/14
 
+% import data
 % DBS
 % CT
 DBS_CT = niftiread("subject_4_DBS.nii");
 [DBS_points(:,1), DBS_points(:,2), DBS_points(:,3)]=ind2sub(size(DBS_CT), find(DBS_CT));
 DBS_3d=DBS_points';
-% flouro
+% fluoro
 DBS_2d=importdata('DBS_lead_4.txt')';
-% put flouro in center
+% put fluoro in center
 DBS_2d = DBS_2d - [512; 640];
 % use one strip
-%DBS_3d = DBS_3d(:,1:87);
+% DBS_3d = DBS_3d(:,1:87);
 
 % Pin tips
 % CT
@@ -50,6 +50,7 @@ if size(DBS_3d, 2)> num_sample
     DBS_3d = DBS_3d(:,inx);
 end
 
+% merge features
 DBS_3d_ori = [DBS_3d, pintips_3d];
 DBS_2d = [DBS_2d, pintips_2d];
 
@@ -63,7 +64,7 @@ DBS_2d = [DBS_2d, pintips_2d];
 % need to be considered.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-number_init = 20;
+number_init = 50;
 best_loss = 9000;
 B_best_rotation = eye(3);
 B_best_translation = [0;0;0];
@@ -96,7 +97,7 @@ for i=1:number_init
     close
 
 
-    % initialize
+    % get initial loss
     [~, ~, ~, old_loss]=optimization(DBS_2d,DBS_3d,plane_z,1000,0.01);
     new_loss = old_loss - 11;
 
