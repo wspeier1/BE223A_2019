@@ -47,7 +47,7 @@ ptyprocess==0.6.0
 pycpd==1.0.5
 pyelastix==1.1
 pyface==6.1.0
-Pygments==2.4.0
+Pygments==2.7.4
 pyparsing==2.4.0
 PyQt5==5.12.2
 PyQt5-sip==4.19.17
